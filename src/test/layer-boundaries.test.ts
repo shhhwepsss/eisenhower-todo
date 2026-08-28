@@ -1,4 +1,4 @@
-import { ESLint } from 'eslint';
+import { ESLint, type Linter } from 'eslint';
 
 /**
  * Границы слоёв — машинная проверка, а не пункт чек-листа
@@ -8,13 +8,13 @@ import { ESLint } from 'eslint';
  */
 const UI_FILE = 'src/ui/task/boundary-fixture.tsx';
 
-async function lintAsUiModule(code: string): Promise<ESLint.LintMessage[]> {
+async function lintAsUiModule(code: string): Promise<Linter.LintMessage[]> {
   const eslint = new ESLint();
   const [result] = await eslint.lintText(code, { filePath: UI_FILE });
   return result?.messages ?? [];
 }
 
-function ruleIds(messages: ESLint.LintMessage[]): (string | null)[] {
+function ruleIds(messages: Linter.LintMessage[]): (string | null)[] {
   return messages.map((message) => message.ruleId);
 }
 
