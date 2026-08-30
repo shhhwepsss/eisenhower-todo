@@ -29,5 +29,22 @@ npm run lint     # eslint, включая границы слоёв
 - `STORAGE_IS_ISOLATED` — `ui/` не импортирует `storage/` и не трогает `localStorage`;
 - `STATE_ACCESS_VIA_HOOKS` — `ui/` импортирует из `state/` только точку входа с хуками.
 
-Что оба правила действительно срабатывают, проверяет
-[`src/test/layer-boundaries.test.ts`](src/test/layer-boundaries.test.ts).
+- `SLICE_PUBLIC_API` — чужой слайс импортируется только через его `index.ts`
+  по алиасу `@/` (например `@/ui/list`), внутренности приватны.
+
+Что все три правила действительно срабатывают, проверяет
+[`tests/layer-boundaries.test.ts`](tests/layer-boundaries.test.ts).
+
+## Раскладка кода
+
+```
+src/ui/app/
+  index.ts     публичный контракт слайса
+  App.tsx      компоненты
+  tabs.tsx
+  types.ts     все типы слайса, включая пропсы
+  lib/         код без разметки: хуки и утилиты слайса
+  app.css
+
+tests/         зеркало src/ + общие setup.ts и layer-boundaries.test.ts
+```

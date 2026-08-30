@@ -8,6 +8,9 @@ import tseslint from 'typescript-eslint';
  * Границы слоёв (docs/specs/4-architecture.md §4, §5) держатся линтером, а не ревью.
  * Правила работают по строке импорта и не резолвят модуль, поэтому настроены до того,
  * как за границами появятся storage/ и state/.
+ *
+ * Правила применяются к src/ui/** — продовому коду. tests/ под них не подпадают:
+ * тест на то и тест, чтобы дотянуться до внутренностей проверяемого модуля.
  */
 const STORAGE_IS_ISOLATED =
   'STORAGE_IS_ISOLATED (docs/specs/4-architecture.md §4): ui/ не знает о хранилище. ' +
@@ -16,6 +19,10 @@ const STORAGE_IS_ISOLATED =
 const STATE_ACCESS_VIA_HOOKS =
   'STATE_ACCESS_VIA_HOOKS (docs/specs/4-architecture.md §5): ui/ импортирует из state/ ' +
   'только точку входа с хуками, но не reducer/actions/store/selectors.';
+
+const SLICE_PUBLIC_API =
+  'SLICE_PUBLIC_API: чужой слайс импортируется через его index.ts по алиасу @/, ' +
+  'например "@/ui/list". Внутренности (App.tsx, tabs.tsx, lib/, types.ts) — приватные.';
 
 export default tseslint.config(
   { ignores: ['dist/**', 'coverage/**'] },
@@ -47,6 +54,7 @@ export default tseslint.config(
           patterns: [
             { group: ['**/storage', '**/storage/**'], message: STORAGE_IS_ISOLATED },
             { group: ['**/state/*', '**/state/**'], message: STATE_ACCESS_VIA_HOOKS },
+            { group: ['../../**', '@/ui/*/*', '@/ui/*/**'], message: SLICE_PUBLIC_API },
           ],
         },
       ],
@@ -63,7 +71,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['src/**/*.test.{ts,tsx}', 'src/test/**/*.ts'],
+    files: ['tests/**/*.{ts,tsx}'],
     languageOptions: {
       globals: {
         describe: 'readonly',

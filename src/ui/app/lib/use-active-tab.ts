@@ -1,12 +1,7 @@
 import { useCallback, useState } from 'react';
-import type { TabId } from './tabs';
+import type { ActiveTab, TabId } from '../types';
 
 const DEFAULT_TAB: TabId = 'list';
-
-export type ActiveTab = {
-  activeTab: TabId;
-  selectTab: (tab: TabId) => void;
-};
 
 /**
  * Выбранная вкладка — состояние представления, а не данные задачи: в модели её нет

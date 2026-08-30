@@ -1,14 +1,9 @@
-export type TabId = 'list' | 'matrix';
+import type { TabId, TabsProps } from './types';
 
 const TABS: readonly { id: TabId; label: string }[] = [
   { id: 'list', label: 'Список' },
   { id: 'matrix', label: 'Матрица' },
 ];
-
-type TabsProps = {
-  activeTab: TabId;
-  onSelect: (tab: TabId) => void;
-};
 
 export function Tabs({ activeTab, onSelect }: TabsProps) {
   return (

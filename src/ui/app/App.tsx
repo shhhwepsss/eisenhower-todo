@@ -1,7 +1,8 @@
-import { ListTab } from '../list/ListTab';
-import { MatrixTab } from '../matrix/MatrixTab';
+import { ListTab } from '@/ui/list';
+import { MatrixTab } from '@/ui/matrix';
+import { useActiveTab } from './lib/use-active-tab';
 import { Tabs } from './tabs';
-import { useActiveTab } from './use-active-tab';
+import './app.css';
 
 export function App() {
   const { activeTab, selectTab } = useActiveTab();

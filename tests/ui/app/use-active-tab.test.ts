@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { useActiveTab } from './use-active-tab';
+import { useActiveTab } from '@/ui/app/lib/use-active-tab';
 
 describe('useActiveTab', () => {
   it('открывает «Список» по умолчанию', () => {

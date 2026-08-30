@@ -19,9 +19,17 @@ function ruleIds(messages: Linter.LintMessage[]): (string | null)[] {
 }
 
 describe('STORAGE_IS_ISOLATED', () => {
-  it('запрещает импорт storage/ из ui/', async () => {
+  it('запрещает импорт storage/ из ui/ по относительному пути', async () => {
     const messages = await lintAsUiModule(
       "import { repository } from '../../storage/local-storage';\nexport const used = repository;\n",
+    );
+
+    expect(ruleIds(messages)).toContain('no-restricted-imports');
+  });
+
+  it('запрещает импорт storage/ из ui/ по алиасу', async () => {
+    const messages = await lintAsUiModule(
+      "import { repository } from '@/storage/local-storage';\nexport const used = repository;\n",
     );
 
     expect(ruleIds(messages)).toContain('no-restricted-imports');
@@ -41,7 +49,7 @@ describe('STORAGE_IS_ISOLATED', () => {
 describe('STATE_ACCESS_VIA_HOOKS', () => {
   it('запрещает импорт внутренностей state/ из ui/', async () => {
     const messages = await lintAsUiModule(
-      "import { reducer } from '../../state/reducer';\nexport const used = reducer;\n",
+      "import { reducer } from '@/state/reducer';\nexport const used = reducer;\n",
     );
 
     expect(ruleIds(messages)).toContain('no-restricted-imports');
@@ -49,7 +57,41 @@ describe('STATE_ACCESS_VIA_HOOKS', () => {
 
   it('разрешает импорт точки входа state/', async () => {
     const messages = await lintAsUiModule(
-      "import { useInboxTasks } from '../../state';\nexport const used = useInboxTasks;\n",
+      "import { useInboxTasks } from '@/state';\nexport const used = useInboxTasks;\n",
+    );
+
+    expect(ruleIds(messages)).not.toContain('no-restricted-imports');
+  });
+});
+
+describe('SLICE_PUBLIC_API', () => {
+  it('запрещает импорт внутренностей чужого слайса', async () => {
+    const messages = await lintAsUiModule(
+      "import { Tabs } from '@/ui/app/tabs';\nexport const used = Tabs;\n",
+    );
+
+    expect(ruleIds(messages)).toContain('no-restricted-imports');
+  });
+
+  it('запрещает импорт из lib/ чужого слайса', async () => {
+    const messages = await lintAsUiModule(
+      "import { useActiveTab } from '@/ui/app/lib/use-active-tab';\nexport const used = useActiveTab;\n",
+    );
+
+    expect(ruleIds(messages)).toContain('no-restricted-imports');
+  });
+
+  it('запрещает обход index.ts относительным путём через два уровня', async () => {
+    const messages = await lintAsUiModule(
+      "import { App } from '../../ui/app/App';\nexport const used = App;\n",
+    );
+
+    expect(ruleIds(messages)).toContain('no-restricted-imports');
+  });
+
+  it('разрешает импорт слайса через его index.ts', async () => {
+    const messages = await lintAsUiModule(
+      "import { ListTab } from '@/ui/list';\nexport const used = ListTab;\n",
     );
 
     expect(ruleIds(messages)).not.toContain('no-restricted-imports');
