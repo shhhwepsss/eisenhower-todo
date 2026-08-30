@@ -8,15 +8,15 @@ import { ESLint, type Linter } from 'eslint';
  */
 const UI_FILE = 'src/ui/task/boundary-fixture.tsx';
 
-async function lintAsUiModule(code: string): Promise<Linter.LintMessage[]> {
+const lintAsUiModule = async (code: string): Promise<Linter.LintMessage[]> => {
   const eslint = new ESLint();
   const [result] = await eslint.lintText(code, { filePath: UI_FILE });
   return result?.messages ?? [];
-}
+};
 
-function ruleIds(messages: Linter.LintMessage[]): (string | null)[] {
+const ruleIds = (messages: Linter.LintMessage[]): (string | null)[] => {
   return messages.map((message) => message.ruleId);
-}
+};
 
 describe('STORAGE_IS_ISOLATED', () => {
   it('запрещает импорт storage/ из ui/ по относительному пути', async () => {

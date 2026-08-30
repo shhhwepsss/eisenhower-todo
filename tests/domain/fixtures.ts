@@ -6,17 +6,17 @@ export const LATER = '2026-02-02T12:00:00.000Z';
 
 export const ZONES: readonly Zone[] = ['inbox', 'Q1', 'Q2', 'Q3', 'Q4'];
 
-export function makeTask(overrides: Partial<Task> = {}): Task {
+export const makeTask = (overrides: Partial<Task> = {}): Task => {
   return { ...createTask({ id: 'task-1', title: 'задача', now: NOW }), ...overrides };
-}
+};
 
 /** Задача в квадранте Q1 с заданным рангом — материал для тестов порядка. */
-export function ranked(id: string, rank: string, overrides: Partial<Task> = {}): Task {
+export const ranked = (id: string, rank: string, overrides: Partial<Task> = {}): Task => {
   return makeTask({ id, rank, assigned: true, urgent: true, important: true, ...overrides });
-}
+};
 
 /** Задача, лежащая в названной зоне. Признаки выводятся из зоны, а не задаются руками. */
-export function inZone(zone: Zone, rank: string, overrides: Partial<Task> = {}): Task {
+export const inZone = (zone: Zone, rank: string, overrides: Partial<Task> = {}): Task => {
   const priority = resolvePriorityByPlacement(resolvePlacementByZone(zone));
   return makeTask({
     id: `task-${zone}-${rank}`,
@@ -26,7 +26,7 @@ export function inZone(zone: Zone, rank: string, overrides: Partial<Task> = {}):
     important: priority.assigned && priority.important,
     ...overrides,
   });
-}
+};
 
 const STATUSES: readonly TaskStatus[] = ['todo', 'in_progress', 'done'];
 const FLAGS: readonly boolean[] = [false, true];
@@ -37,7 +37,7 @@ const FLAGS: readonly boolean[] = [false, true];
  * Пространство конечное и маленькое, поэтому свойства проверяются исчерпывающим
  * перебором, а не случайной генерацией: перебор сильнее и не требует библиотеки.
  */
-export function allTaskVariants(): Task[] {
+export const allTaskVariants = (): Task[] => {
   const tasks: Task[] = [];
   for (const assigned of FLAGS) {
     for (const urgent of FLAGS) {
@@ -60,4 +60,4 @@ export function allTaskVariants(): Task[] {
     }
   }
   return tasks;
-}
+};

@@ -18,9 +18,9 @@ import { allTaskVariants, makeTask } from './fixtures';
  */
 const ALL_QUADRANTS: readonly Quadrant[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 
-function zoneKey(placement: Placement): string {
+const zoneKey = (placement: Placement): string => {
   return placement.zone === 'inbox' ? 'inbox' : placement.quadrant;
-}
+};
 
 describe('resolvePlacement', () => {
   it('неразобранная задача попадает во «Входящие»', () => {

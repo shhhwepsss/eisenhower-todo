@@ -14,7 +14,7 @@ import type { NewTask, Task } from './types';
  * (порядок там по `createdAt`), а при первом попадании в квадрант ранг
  * перегенерируется по соседям приёмника — RANK_IS_QUADRANT_LOCAL.
  */
-export function createTask({ id, title, text = '', now }: NewTask): Task {
+export const createTask = ({ id, title, text = '', now }: NewTask): Task => {
   return {
     id,
     title: normalizeTaskTitle(title),
@@ -28,4 +28,4 @@ export function createTask({ id, title, text = '', now }: NewTask): Task {
     updatedAt: now,
     deletedAt: null,
   };
-}
+};

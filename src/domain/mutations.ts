@@ -1,6 +1,6 @@
 import { ZONE_MOVES } from './constants';
 import { isBetween, rankBetween } from './ordering';
-import { resolvePlacement, resolvePlacementByPriority, resolvePriorityByPlacement } from './placement';
+import { resolvePlacement, resolvePlacementByPriority, resolvePriorityByPlacement, isSamePlacement } from './placement';
 import { normalizeTaskText, normalizeTaskTitle } from './text';
 import { resolveZoneByPlacement } from './zone';
 import type { Neighbours, Placement, Priority, Task, TaskStatus } from './types';
@@ -15,9 +15,11 @@ import type { Neighbours, Placement, Priority, Task, TaskStatus } from './types'
  * Два правила общие для всех:
  *
  * - TIMESTAMPS_MONOTONIC_PER_TASK — изменение задачи собирается только в `touch`,
- *   и `updatedAt` пишется только там. Забыть его нельзя, можно лишь пройти мимо
- *   двери — и это ловит tests/domain/mutations.test.ts, который перебирает
- *   экспорты этого модуля по таблице и падает на не покрытом экспорте.
+ *   и это единственное место, где `updatedAt` двигается. Первое значение ставит
+ *   `createTask` (src/domain/factory.ts) при рождении задачи, дальше поле трогает
+ *   только `touch`. Забыть его нельзя, можно лишь пройти мимо двери — и это ловит
+ *   tests/domain/mutations.test.ts, который перебирает экспорты этого модуля
+ *   по таблице и падает на не покрытом экспорте.
  * - Идемпотентность (спека §10) — мутация, которой нечего менять, возвращает ту же
  *   задачу. Поэтому повтор действия не двигает `updatedAt` и не выглядит для
  *   будущей синхронизации как правка.
@@ -26,22 +28,24 @@ import type { Neighbours, Placement, Priority, Task, TaskStatus } from './types'
 /** Всё, что мутация вправе менять. `id`, `createdAt` и `updatedAt` сюда не входят. */
 type TaskPatch = Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>>;
 
-/** Единственное место во всём проекте, где пишется `updatedAt`. */
-function touch(task: Task, patch: TaskPatch, now: string): Task {
-  return { ...task, ...patch, updatedAt: now };
-}
+/** Единственное место, где мутация двигает `updatedAt` (первое значение ставит `createTask`). */
+const touch = (task: Task, patch: TaskPatch, now: string): Task => ({
+  ...task,
+  ...patch,
+  updatedAt: now,
+});
 
-export function editTitle(task: Task, raw: string, now: string): Task {
+export const editTitle = (task: Task, raw: string, now: string): Task => {
   const title = normalizeTaskTitle(raw);
   if (title === task.title) return task;
   return touch(task, { title }, now);
-}
+};
 
-export function editText(task: Task, raw: string, now: string): Task {
+export const editText = (task: Task, raw: string, now: string): Task => {
   const text = normalizeTaskText(raw);
   if (text === task.text) return task;
   return touch(task, { text }, now);
-}
+};
 
 /**
  * Признаки разбора `setStatus` не трогает — PRIORITY_SURVIVES_DONE: задача
@@ -51,43 +55,42 @@ export function editText(task: Task, raw: string, now: string): Task {
  * своего прежнего квадранта, а не туда, где стояла до завершения. Соседи для этого
  * приходят в `between` и в остальных переходах не нужны.
  */
-export function setStatus(
+export const setStatus = (
   task: Task,
   status: TaskStatus,
   between: Neighbours,
   now: string,
-): Task {
+): Task => {
   if (task.status === status) return task;
   const returnsToMatrix = task.status === 'done' && task.assigned;
   const rank = returnsToMatrix ? rankBetween(between) : task.rank;
   return touch(task, { status, rank }, now);
-}
+};
 
 /** Разбор переключателями: задача встаёт в конец зоны-приёмника (PRD §3). */
-export function setPriority(
+export const setPriority = (
   task: Task,
   priority: Priority,
   between: Neighbours,
   now: string,
-): Task {
-  return placeTask(task, resolvePlacementByPriority(priority), between, now);
-}
+): Task => {
+  const to = resolvePlacementByPriority(priority);
+  return placeTask(task, to, between, now);
+};
 
 /** Перетаскивание: задача встаёт ровно между переданными соседями (PRD §3). */
-export function moveToZone(
+export const moveToZone = (
   task: Task,
   to: Placement,
   between: Neighbours,
   now: string,
-): Task {
-  return placeTask(task, to, between, now);
-}
+): Task => placeTask(task, to, between, now);
 
 /** DELETE_IS_A_TOMBSTONE: запись остаётся, повторное удаление — no-op. */
-export function deleteTask(task: Task, now: string): Task {
+export const deleteTask = (task: Task, now: string): Task => {
   if (task.deletedAt !== null) return task;
   return touch(task, { deletedAt: now }, now);
-}
+};
 
 /**
  * Общее тело `setPriority` и `moveToZone`: обе меняют ровно одно — в какой зоне
@@ -96,24 +99,26 @@ export function deleteTask(task: Task, now: string): Task {
  * Что происходит при каждом переходе, решает не эта функция, а таблица
  * `ZONE_MOVES` (src/domain/constants/zone-moves.ts): все 25 переходов выписаны
  * там построчно, и правило ранга читается оттуда, а не выводится здесь по месту.
+ *
+ * Тело читается сверху вниз по шагам, каждый шаг назван: где задача лежит сейчас,
+ * куда её кладут, что таблица говорит про этот переход, надо ли вообще что-то делать,
+ * какими становятся признаки и ранг.
  */
-function placeTask(task: Task, to: Placement, between: Neighbours, now: string): Task {
-  const from = resolveZoneByPlacement(resolvePlacement(task));
-  const target = resolveZoneByPlacement(to);
-  const move = ZONE_MOVES[`${from}->${target}`];
+const placeTask = (task: Task, to: Placement, between: Neighbours, now: string): Task => {
+  const from = resolvePlacement(task);
+  const fromZone = resolveZoneByPlacement(from);
+  const toZone = resolveZoneByPlacement(to);
+  const move = ZONE_MOVES[`${fromZone}->${toZone}`];
 
-  const staysPut = from === target && (move.rank === 'keep' || isBetween(task, between));
+  const staysPut = isSamePlacement(from, to)
+    && (move.rank === 'keep' || isBetween(task, between));
   if (staysPut) return task;
 
   const priority = resolvePriorityByPlacement(to);
-  return touch(
-    task,
-    {
-      assigned: priority.assigned,
-      urgent: priority.assigned && priority.urgent,
-      important: priority.assigned && priority.important,
-      rank: move.rank === 'regenerate' ? rankBetween(between) : task.rank,
-    },
-    now,
-  );
-}
+  const assigned = priority.assigned;
+  const urgent = assigned && priority.urgent;
+  const important = assigned && priority.important;
+  const rank = move.rank === 'regenerate' ? rankBetween(between) : task.rank;
+
+  return touch(task, { assigned, urgent, important, rank }, now);
+};

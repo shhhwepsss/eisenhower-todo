@@ -18,9 +18,9 @@ import { LATER, makeTask, ranked } from './fixtures';
 const NOWHERE: Neighbours = { before: null, after: null };
 
 /** Признаки разбора — тройка, которую PRIORITY_SURVIVES_DONE обязана сохранять. */
-function priorityFields(task: Task) {
+const priorityFields = (task: Task) => {
   return { assigned: task.assigned, urgent: task.urgent, important: task.important };
-}
+};
 
 describe('editTitle', () => {
   it('меняет заголовок и ставит updatedAt', () => {

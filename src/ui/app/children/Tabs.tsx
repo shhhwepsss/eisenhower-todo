@@ -2,7 +2,7 @@ import { TABS } from '../constants';
 import type { TabsProps } from '../types';
 import styles from './Tabs.module.scss';
 
-export function Tabs({ activeTab, onSelect }: TabsProps) {
+export const Tabs = ({ activeTab, onSelect }: TabsProps) => {
   return (
     <div className={styles.tabs} role="tablist" aria-label="Представления задач">
       {TABS.map(({ id, label }) => (
@@ -21,4 +21,4 @@ export function Tabs({ activeTab, onSelect }: TabsProps) {
       ))}
     </div>
   );
-}
+};

@@ -1,4 +1,4 @@
-import { isTaskLive, getTasksListGroup } from '@/domain';
+import { getTasksListGroup, isTaskLive } from '@/domain';
 import type { ListGroup } from '@/domain';
 
 import { allTaskVariants, makeTask } from './fixtures';

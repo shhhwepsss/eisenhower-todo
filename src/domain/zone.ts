@@ -7,10 +7,10 @@ import type { Placement, Zone } from './types';
  * невозможное состояние. `Zone` нужна ровно затем, чтобы переходы можно было
  * выписать таблицей и увидеть их все сразу.
  */
-export function resolveZoneByPlacement(placement: Placement): Zone {
+export const resolveZoneByPlacement = (placement: Placement): Zone => {
   return placement.zone === 'inbox' ? 'inbox' : placement.quadrant;
-}
+};
 
-export function resolvePlacementByZone(zone: Zone): Placement {
+export const resolvePlacementByZone = (zone: Zone): Placement => {
   return zone === 'inbox' ? { zone: 'inbox' } : { zone: 'quadrant', quadrant: zone };
-}
+};
