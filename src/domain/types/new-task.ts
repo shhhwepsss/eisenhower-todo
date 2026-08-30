@@ -1,0 +1,11 @@
+/**
+ * Вход фабрики задачи. Всё недетерминированное приходит снаружи —
+ * это то, что делает домен чистым (docs/specs/4-architecture.md §5, REDUCER_IS_PURE).
+ */
+export type NewTask = {
+  /** UUID v4, сгенерированный на границе приложения. */
+  id: string;
+  text: string;
+  /** ISO-8601 UTC: момент создания. */
+  now: string;
+};
