@@ -67,15 +67,15 @@ describe('STATE_ACCESS_VIA_HOOKS', () => {
 describe('SLICE_PUBLIC_API', () => {
   it('запрещает импорт внутренностей чужого слайса', async () => {
     const messages = await lintAsUiModule(
-      "import { Tabs } from '@/ui/app/tabs';\nexport const used = Tabs;\n",
+      "import { Tabs } from '@/ui/app/children/Tabs';\nexport const used = Tabs;\n",
     );
 
     expect(ruleIds(messages)).toContain('no-restricted-imports');
   });
 
-  it('запрещает импорт из lib/ чужого слайса', async () => {
+  it('запрещает импорт из hooks/ чужого слайса', async () => {
     const messages = await lintAsUiModule(
-      "import { useActiveTab } from '@/ui/app/lib/use-active-tab';\nexport const used = useActiveTab;\n",
+      "import { useActiveTab } from '@/ui/app/hooks/use-active-tab';\nexport const used = useActiveTab;\n",
     );
 
     expect(ruleIds(messages)).toContain('no-restricted-imports');

@@ -1,7 +1,7 @@
 import { ListTab } from '@/ui/list';
 import { MatrixTab } from '@/ui/matrix';
-import { useActiveTab } from './lib/use-active-tab';
-import { Tabs } from './tabs';
+import { Tabs } from './children/Tabs';
+import { useActiveTab } from './hooks/use-active-tab';
 import './app.css';
 
 export function App() {

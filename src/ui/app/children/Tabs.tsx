@@ -1,4 +1,4 @@
-import type { TabId, TabsProps } from './types';
+import type { TabId, TabsProps } from '../types';
 
 const TABS: readonly { id: TabId; label: string }[] = [
   { id: 'list', label: 'Список' },
