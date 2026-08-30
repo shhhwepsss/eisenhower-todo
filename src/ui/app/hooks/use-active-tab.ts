@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
+import { DEFAULT_TAB } from '../constants';
 import type { ActiveTab, TabId } from '../types';
-
-const DEFAULT_TAB: TabId = 'list';
 
 /**
  * Выбранная вкладка — состояние представления, а не данные задачи: в модели её нет

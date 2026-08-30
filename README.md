@@ -45,6 +45,7 @@ src/ui/app/
   children/    только разметка, один уровень вложенности, без логики
   hooks/       состояние и эффекты слайса
   helpers/     чистые функции слайса
+  constants/   константы слайса
   types/       по файлу на тип + index.ts
 
 tests/         зеркало src/ + общие setup.ts и layer-boundaries.test.ts

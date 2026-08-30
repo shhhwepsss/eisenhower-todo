@@ -471,7 +471,8 @@ src/
   state/       index.ts (хуки — единственный вход для ui/), store.tsx, reducer.ts,
                actions.ts, selectors.ts
   ui/
-    app/       index.ts, App.tsx, app.css, children/, hooks/, helpers/, types/
+    app/       index.ts, App.tsx, app.css, children/, hooks/, helpers/,
+               constants/, types/
     list/      вкладка «Список»
     matrix/    вкладка «Матрица»
     task/      общие представления задачи
@@ -491,7 +492,9 @@ src/ui/app/
   children/    только разметка, ровно один уровень вложенности
   hooks/       состояние и эффекты слайса
   helpers/     чистые функции слайса
-  types/       по файлу на тип: tab-id.ts, tabs.ts, active-tab.ts + index.ts
+  constants/   константы слайса: tabs.ts (TABS, DEFAULT_TAB) + index.ts
+  types/       по файлу на тип: tab-id.ts, tab-item.ts, tabs.ts,
+               active-tab.ts + index.ts
 ```
 
 - `index.ts` — единственный публичный контракт слайса. Всё остальное приватно.
