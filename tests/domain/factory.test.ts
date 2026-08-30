@@ -1,9 +1,9 @@
-import { createTask } from '@/domain';
+import { createTask, placementOf } from '@/domain';
 
 import { NOW } from './fixtures';
 
 describe('createTask', () => {
-  it('рождает неразобранную задачу с признаками по умолчанию (MANUAL_PRIORITISATION)', () => {
+  it('рождает неразобранную задачу во «Входящих» (MANUAL_PRIORITISATION)', () => {
     const task = createTask({ id: 'task-1', title: 'купить хлеб', now: NOW });
 
     expect(task).toEqual({
@@ -19,6 +19,7 @@ describe('createTask', () => {
       updatedAt: NOW,
       deletedAt: null,
     });
+    expect(placementOf(task)).toEqual({ zone: 'inbox' });
   });
 
   it('ID_IS_GLOBALLY_UNIQUE: id приходит снаружи, домен его не конструирует', () => {
