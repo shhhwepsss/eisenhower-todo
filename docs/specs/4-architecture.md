@@ -466,7 +466,9 @@ useTaskActions(): TaskActions   // { addTask, editText, setStatus, setPriority, 
 
 ```
 src/
-  domain/      task.ts, placement.ts, ordering.ts, factory.ts   — типы и чистые правила
+  domain/      index.ts (публичный контракт), types/ (по файлу на тип), placement.ts,
+               list-group.ts, visibility.ts, ordering.ts, text.ts, factory.ts,
+               mutations.ts   — типы и чистые правила
   storage/     repository.ts (порт), local-storage.ts, migrations.ts
   state/       index.ts (хуки — единственный вход для ui/), store.tsx, reducer.ts,
                actions.ts, selectors.ts
