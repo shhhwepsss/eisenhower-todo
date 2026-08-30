@@ -49,6 +49,10 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'func-style': ['error', 'expression', { allowArrowFunctions: true }],
       'prefer-arrow-callback': ['error', { allowNamedFunctions: false }],
+      '@typescript-eslint/typedef': [
+        'error',
+        { variableDeclaration: true, variableDeclarationIgnoreFunction: true },
+      ],
       'no-restricted-syntax': [
         'error',
         { selector: 'FunctionExpression', message: ARROW_FUNCTIONS_ONLY },

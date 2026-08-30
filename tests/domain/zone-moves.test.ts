@@ -6,7 +6,7 @@ import {
   rankBetween,
   resolveZoneByPlacement,
 } from '@/domain';
-import type { ZoneMoveKey } from '@/domain';
+import type { Neighbours, RankRule, Task, ZoneMove, ZoneMoveKey } from '@/domain';
 
 import { LATER, ZONES, inZone } from './fixtures';
 
@@ -26,7 +26,7 @@ describe('ZONE_MOVES', () => {
 
     for (const from of ZONES) {
       for (const to of ZONES) {
-        const move = ZONE_MOVES[`${from}->${to}`];
+        const move: ZoneMove = ZONE_MOVES[`${from}->${to}`];
 
         expect(move, `${from}->${to}`).toBeDefined();
         expect(move.why.length, `${from}->${to}`).toBeGreaterThan(0);
@@ -37,7 +37,7 @@ describe('ZONE_MOVES', () => {
   it('ранг во «Входящие» не трогается, в квадрант — перегенерируется', () => {
     for (const from of ZONES) {
       for (const to of ZONES) {
-        const expected = to === 'inbox' ? 'keep' : 'regenerate';
+        const expected: RankRule = to === 'inbox' ? 'keep' : 'regenerate';
 
         expect(ZONE_MOVES[`${from}->${to}`].rank, `${from}->${to}`).toBe(expected);
       }
@@ -48,11 +48,11 @@ describe('ZONE_MOVES', () => {
     for (const from of ZONES) {
       for (const to of ZONES) {
         const label: ZoneMoveKey = `${from}->${to}`;
-        const task = inZone(from, 'a1');
-        const neighbour = inZone(to, 'a5');
-        const between = { before: neighbour, after: null };
+        const task: Task = inZone(from, 'a1');
+        const neighbour: Task = inZone(to, 'a5');
+        const between: Neighbours = { before: neighbour, after: null };
 
-        const moved = moveToZone(task, resolvePlacementByZone(to), between, LATER);
+        const moved: Task = moveToZone(task, resolvePlacementByZone(to), between, LATER);
 
         expect(resolveZoneByPlacement(resolvePlacement(moved)), label).toBe(to);
 
@@ -66,7 +66,7 @@ describe('ZONE_MOVES', () => {
   });
 
   it('переход внутри «Входящих» вообще ничего не меняет', () => {
-    const task = inZone('inbox', 'a1');
+    const task: Task = inZone('inbox', 'a1');
 
     expect(moveToZone(task, resolvePlacementByZone('inbox'), { before: null, after: null }, LATER)).toBe(
       task,

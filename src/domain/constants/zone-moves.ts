@@ -20,9 +20,9 @@ import type { ZoneMove, ZoneMoveKey } from '../types';
  * из матрицы целиком (DONE_LEAVES_MATRIX) и возвращается в ту же зону, из которой
  * ушла; за это отвечает `setStatus`, а не переход между зонами.
  */
-const KEEP = 'ранг не трогаем: во «Входящих» порядок задаёт createdAt';
-const TO_INBOX = 'возврат в неразобранные — только перетаскиванием (спека §2)';
-const REORDER = 'перестановка внутри квадранта: ранг по новым соседям';
+const KEEP: string = 'ранг не трогаем: во «Входящих» порядок задаёт createdAt';
+const TO_INBOX: string = 'возврат в неразобранные — только перетаскиванием (спека §2)';
+const REORDER: string = 'перестановка внутри квадранта: ранг по новым соседям';
 
 export const ZONE_MOVES: Record<ZoneMoveKey, ZoneMove> = {
   'inbox->inbox': { rank: 'keep', why: `перетаскивание внутри «Входящих» ничего не меняет: ${KEEP}` },

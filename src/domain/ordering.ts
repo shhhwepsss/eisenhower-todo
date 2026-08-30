@@ -33,8 +33,8 @@ export const sortByRank = (tasks: readonly Task[]): Task[] => {
  * место не перегенерировал ранг (идемпотентность, §1).
  */
 export const isBetween = (task: Task, { before, after }: Neighbours): boolean => {
-  const afterBefore = before === null || compareTasks(before, task) < 0;
-  const beforeAfter = after === null || compareTasks(task, after) < 0;
+  const afterBefore: boolean = before === null || compareTasks(before, task) < 0;
+  const beforeAfter: boolean = after === null || compareTasks(task, after) < 0;
   return afterBefore && beforeAfter;
 };
 

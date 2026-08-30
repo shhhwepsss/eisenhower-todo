@@ -20,4 +20,4 @@ export const QUADRANT_FLAGS: Record<Quadrant, PriorityFlags> = {
  * Приведение типа безопасно: `Record<Quadrant, ...>` требует ровно эти ключи —
  * ни одного лишнего, ни одного пропущенного. Порядок — порядок объявления в таблице.
  */
-export const QUADRANTS = Object.keys(QUADRANT_FLAGS) as readonly Quadrant[];
+export const QUADRANTS: readonly Quadrant[] = Object.keys(QUADRANT_FLAGS) as Quadrant[];

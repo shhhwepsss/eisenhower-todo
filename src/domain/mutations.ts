@@ -3,7 +3,7 @@ import { isBetween, rankBetween } from './ordering';
 import { resolvePlacement, resolvePlacementByPriority, resolvePriorityByPlacement, isSamePlacement } from './placement';
 import { normalizeTaskText, normalizeTaskTitle } from './text';
 import { resolveZoneByPlacement } from './zone';
-import type { Neighbours, Placement, Priority, Task, TaskStatus } from './types';
+import type { Neighbours, Placement, Priority, Task, TaskStatus, Zone, ZoneMove } from './types';
 
 /**
  * Мутации задачи — чистые функции «задача + намерение + время → задача».
@@ -36,13 +36,13 @@ const touch = (task: Task, patch: TaskPatch, now: string): Task => ({
 });
 
 export const editTitle = (task: Task, raw: string, now: string): Task => {
-  const title = normalizeTaskTitle(raw);
+  const title: string = normalizeTaskTitle(raw);
   if (title === task.title) return task;
   return touch(task, { title }, now);
 };
 
 export const editText = (task: Task, raw: string, now: string): Task => {
-  const text = normalizeTaskText(raw);
+  const text: string = normalizeTaskText(raw);
   if (text === task.text) return task;
   return touch(task, { text }, now);
 };
@@ -62,8 +62,8 @@ export const setStatus = (
   now: string,
 ): Task => {
   if (task.status === status) return task;
-  const returnsToMatrix = task.status === 'done' && task.assigned;
-  const rank = returnsToMatrix ? rankBetween(between) : task.rank;
+  const returnsToMatrix: boolean = task.status === 'done' && task.assigned;
+  const rank: string = returnsToMatrix ? rankBetween(between) : task.rank;
   return touch(task, { status, rank }, now);
 };
 
@@ -74,7 +74,7 @@ export const setPriority = (
   between: Neighbours,
   now: string,
 ): Task => {
-  const to = resolvePlacementByPriority(priority);
+  const to: Placement = resolvePlacementByPriority(priority);
   return placeTask(task, to, between, now);
 };
 
@@ -105,20 +105,20 @@ export const deleteTask = (task: Task, now: string): Task => {
  * какими становятся признаки и ранг.
  */
 const placeTask = (task: Task, to: Placement, between: Neighbours, now: string): Task => {
-  const from = resolvePlacement(task);
-  const fromZone = resolveZoneByPlacement(from);
-  const toZone = resolveZoneByPlacement(to);
-  const move = ZONE_MOVES[`${fromZone}->${toZone}`];
+  const from: Placement = resolvePlacement(task);
+  const fromZone: Zone = resolveZoneByPlacement(from);
+  const toZone: Zone = resolveZoneByPlacement(to);
+  const move: ZoneMove = ZONE_MOVES[`${fromZone}->${toZone}`];
 
-  const staysPut = isSamePlacement(from, to)
+  const staysPut: boolean = isSamePlacement(from, to)
     && (move.rank === 'keep' || isBetween(task, between));
   if (staysPut) return task;
 
-  const priority = resolvePriorityByPlacement(to);
-  const assigned = priority.assigned;
-  const urgent = assigned && priority.urgent;
-  const important = assigned && priority.important;
-  const rank = move.rank === 'regenerate' ? rankBetween(between) : task.rank;
+  const priority: Priority = resolvePriorityByPlacement(to);
+  const assigned: boolean = priority.assigned;
+  const urgent: boolean = priority.assigned && priority.urgent;
+  const important: boolean = priority.assigned && priority.important;
+  const rank: string = move.rank === 'regenerate' ? rankBetween(between) : task.rank;
 
   return touch(task, { assigned, urgent, important, rank }, now);
 };

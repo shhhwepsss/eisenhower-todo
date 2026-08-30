@@ -7,7 +7,7 @@ import {
   resolvePriority,
   resolvePriorityByPlacement,
 } from '@/domain';
-import type { Placement, Quadrant } from '@/domain';
+import type { Placement, Priority, Quadrant, Task } from '@/domain';
 
 import { allTaskVariants, makeTask } from './fixtures';
 
@@ -28,7 +28,7 @@ describe('resolvePlacement', () => {
   });
 
   it('признаки неразобранной задачи не читаются: зона всё равно «Входящие»', () => {
-    const task = makeTask({ assigned: false, urgent: true, important: true });
+    const task: Task = makeTask({ assigned: false, urgent: true, important: true });
 
     expect(resolvePlacement(task)).toEqual({ zone: 'inbox' });
     expect(resolvePriority(task)).toEqual({ assigned: false });
@@ -40,14 +40,14 @@ describe('resolvePlacement', () => {
     { urgent: true, important: false, quadrant: 'Q3' },
     { urgent: false, important: false, quadrant: 'Q4' },
   ])('разобранная $urgent/$important → $quadrant', ({ urgent, important, quadrant }) => {
-    const task = makeTask({ assigned: true, urgent, important });
+    const task: Task = makeTask({ assigned: true, urgent, important });
 
     expect(resolvePlacement(task)).toEqual({ zone: 'quadrant', quadrant });
   });
 
   it('Q4 отличим от «Входящих»: та же пара признаков, разные зоны', () => {
-    const inbox = makeTask({ assigned: false, urgent: false, important: false });
-    const q4 = makeTask({ assigned: true, urgent: false, important: false });
+    const inbox: Task = makeTask({ assigned: false, urgent: false, important: false });
+    const q4: Task = makeTask({ assigned: true, urgent: false, important: false });
 
     expect(resolvePlacement(inbox)).not.toEqual(resolvePlacement(q4));
   });
@@ -72,8 +72,8 @@ describe('соответствие «квадрант ↔ признаки»', (
 
   it('признаки квадранта совпадают с тем, что читается с задачи', () => {
     for (const quadrant of ALL_QUADRANTS) {
-      const priority = resolvePriorityByPlacement({ zone: 'quadrant', quadrant });
-      const task = makeTask({
+      const priority: Priority = resolvePriorityByPlacement({ zone: 'quadrant', quadrant });
+      const task: Task = makeTask({
         assigned: true,
         urgent: priority.assigned && priority.urgent,
         important: priority.assigned && priority.important,
@@ -94,24 +94,24 @@ describe('isSamePlacement', () => {
 });
 
 describe('MATRIX_PARTITION', () => {
-  const variants = allTaskVariants();
+  const variants: Task[] = allTaskVariants();
 
   it('зоны матрицы покрывают все видимые задачи и не пересекаются', () => {
-    const visible = variants.filter(isTaskInMatrix);
-    const byZone = new Map<string, number>();
+    const visible: Task[] = variants.filter(isTaskInMatrix);
+    const byZone: Map<string, number> = new Map<string, number>();
 
     for (const task of visible) {
-      const key = zoneKey(resolvePlacement(task));
+      const key: string = zoneKey(resolvePlacement(task));
       byZone.set(key, (byZone.get(key) ?? 0) + 1);
     }
 
-    const total = [...byZone.values()].reduce((sum, count) => sum + count, 0);
+    const total: number = [...byZone.values()].reduce((sum, count) => sum + count, 0);
     expect(total).toBe(visible.length);
     expect([...byZone.keys()].sort()).toEqual(['Q1', 'Q2', 'Q3', 'Q4', 'inbox']);
   });
 
   it('DONE_LEAVES_MATRIX: завершённых и удалённых задач в матрице нет', () => {
-    const visible = variants.filter(isTaskInMatrix);
+    const visible: Task[] = variants.filter(isTaskInMatrix);
 
     expect(visible.every((task) => task.status !== 'done')).toBe(true);
     expect(visible.every((task) => task.deletedAt === null)).toBe(true);

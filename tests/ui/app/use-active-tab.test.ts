@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useActiveTab } from '@/ui/app/hooks/use-active-tab';
+import type { ActiveTab } from '@/ui/app/types';
 
 describe('useActiveTab', () => {
   it('открывает «Список» по умолчанию', () => {
@@ -20,7 +21,7 @@ describe('useActiveTab', () => {
 
   it('отдаёт стабильную ссылку на selectTab между рендерами', () => {
     const { result, rerender } = renderHook(() => useActiveTab());
-    const firstSelectTab = result.current.selectTab;
+    const firstSelectTab: ActiveTab['selectTab'] = result.current.selectTab;
 
     rerender();
 

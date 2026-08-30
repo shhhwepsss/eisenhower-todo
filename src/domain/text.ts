@@ -5,7 +5,7 @@
  * Следствие для UI: пустой ввод гасит форма, а не ловит это исключение.
  */
 export const normalizeTaskTitle = (raw: string): string => {
-  const title = raw.trim();
+  const title: string = raw.trim();
   if (title === '') throw new Error('TITLE_IS_NOT_EMPTY: заголовок задачи не может быть пустым');
   return title;
 };
