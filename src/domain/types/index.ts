@@ -8,3 +8,4 @@ export type { Quadrant } from './quadrant';
 export type { Task } from './task';
 export type { TaskStatus } from './task-status';
 export type { Zone } from './zone';
+export type { RankRule, ZoneMove, ZoneMoveKey } from './zone-move';
