@@ -1,0 +1,9 @@
+@use '../../shared/styles/panel' as *;
+
+.panel {
+  @include panel;
+}
+
+.placeholder {
+  @include panel-placeholder;
+}

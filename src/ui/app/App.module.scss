@@ -1,0 +1,13 @@
+@use '../../styles/tokens' as *;
+
+.app {
+  max-width: $content-width;
+  margin: 0 auto;
+  padding: $space-xl $space-md;
+}
+
+.title {
+  margin: 0 0 $space-lg;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
