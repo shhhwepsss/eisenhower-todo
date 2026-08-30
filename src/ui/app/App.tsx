@@ -2,14 +2,14 @@ import { ListTab } from '@/ui/list';
 import { MatrixTab } from '@/ui/matrix';
 import { Tabs } from './children/Tabs';
 import { useActiveTab } from './hooks/use-active-tab';
-import './app.css';
+import styles from './App.module.scss';
 
 export function App() {
   const { activeTab, selectTab } = useActiveTab();
 
   return (
-    <main className="app">
-      <h1 className="app__title">Eisenhower Todo</h1>
+    <main className={styles.app}>
+      <h1 className={styles.title}>Eisenhower Todo</h1>
       <Tabs activeTab={activeTab} onSelect={selectTab} />
       {activeTab === 'list' ? <ListTab /> : <MatrixTab />}
     </main>

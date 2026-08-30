@@ -471,12 +471,13 @@ src/
   state/       index.ts (хуки — единственный вход для ui/), store.tsx, reducer.ts,
                actions.ts, selectors.ts
   ui/
-    app/       index.ts, App.tsx, app.css, children/, hooks/, helpers/,
-               constants/, types/
+    app/       index.ts, App.tsx, App.module.scss, children/, hooks/,
+               helpers/, constants/, types/
     list/      вкладка «Список»
     matrix/    вкладка «Матрица»
     task/      общие представления задачи
-  shared/      мелкие утилиты без доменного смысла
+  shared/      мелкие утилиты без доменного смысла, styles/ — общие миксины
+  styles/      global.scss (:root, body) и _tokens.scss (сырые значения)
 
 tests/         зеркало src/: tests/ui/app/App.test.tsx и т.д.
                плюс общие setup.ts и layer-boundaries.test.ts
@@ -486,15 +487,16 @@ tests/         зеркало src/: tests/ui/app/App.test.tsx и т.д.
 
 ```
 src/ui/app/
-  index.ts     публичный контракт слайса
-  App.tsx      единственный компонент в корне
-  app.css
-  children/    только разметка, ровно один уровень вложенности
-  hooks/       состояние и эффекты слайса
-  helpers/     чистые функции слайса
-  constants/   константы слайса: tabs.ts (TABS, DEFAULT_TAB) + index.ts
-  types/       по файлу на тип: tab-id.ts, tab-item.ts, tabs.ts,
-               active-tab.ts + index.ts
+  index.ts        публичный контракт слайса
+  App.tsx         единственный компонент в корне
+  App.module.scss стили компонента: SCSS-модуль рядом с ним
+  children/       только разметка, ровно один уровень вложенности;
+                  у компонента свой Tabs.module.scss
+  hooks/          состояние и эффекты слайса
+  helpers/        чистые функции слайса
+  constants/      константы слайса: tabs.ts (TABS, DEFAULT_TAB) + index.ts
+  types/          по файлу на тип: tab-id.ts, tab-item.ts, tabs.ts,
+                  active-tab.ts + index.ts
 ```
 
 - `index.ts` — единственный публичный контракт слайса. Всё остальное приватно.
@@ -505,6 +507,8 @@ src/ui/app/
   остаётся рядом с разметкой.
 - Тесты живут в зеркальном дереве `tests/`, а не рядом с кодом: `src/` содержит
   только продовый код.
+- Стили — SCSS-модули рядом с компонентом; глобальные правила и токены — в `src/styles/`,
+  общие миксины — в `src/shared/styles/`. Правила в `CLAUDE.md` §7.
 
 Импорт чужого слайса — только через его `index.ts` по алиасу `@/` (`@/ui/list`).
 Инвариант **`SLICE_PUBLIC_API`**: обход `index.ts` (`@/ui/app/tabs`, `@/ui/app/lib/...`,

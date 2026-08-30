@@ -1,0 +1,22 @@
+@use '../../../styles/tokens' as *;
+
+.tabs {
+  display: flex;
+  gap: $space-xs;
+  border-bottom: 1px solid $color-border;
+}
+
+.tab {
+  padding: $space-sm $space-md;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tabActive {
+  border-bottom-color: currentColor;
+  font-weight: 600;
+}

@@ -1,0 +1,10 @@
+@use 'tokens' as *;
+
+:root {
+  color-scheme: light dark;
+  font-family: $font-stack;
+}
+
+body {
+  margin: 0;
+}
