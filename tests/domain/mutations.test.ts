@@ -1,6 +1,8 @@
+import * as mutations from '@/domain/mutations';
 import {
   deleteTask,
   editText,
+  editTitle,
   endOf,
   isLive,
   moveToZone,
@@ -20,24 +22,47 @@ function priorityFields(task: Task) {
   return { assigned: task.assigned, urgent: task.urgent, important: task.important };
 }
 
-describe('editText', () => {
-  it('меняет текст и ставит updatedAt', () => {
+describe('editTitle', () => {
+  it('меняет заголовок и ставит updatedAt', () => {
     const task = makeTask();
-    const edited = editText(task, '  новый текст  ', LATER);
+    const edited = editTitle(task, '  новый заголовок  ', LATER);
 
-    expect(edited.text).toBe('новый текст');
+    expect(edited.title).toBe('новый заголовок');
     expect(edited.updatedAt).toBe(LATER);
     expect(edited.createdAt).toBe(task.createdAt);
   });
 
-  it('тот же текст — та же задача, updatedAt не двигается', () => {
-    const task = makeTask({ text: 'задача' });
+  it('тот же заголовок — та же задача, updatedAt не двигается', () => {
+    const task = makeTask({ title: 'задача' });
 
-    expect(editText(task, '  задача  ', LATER)).toBe(task);
+    expect(editTitle(task, '  задача  ', LATER)).toBe(task);
   });
 
-  it('пустой текст — ошибка', () => {
-    expect(() => editText(makeTask(), '   ', LATER)).toThrow(/TEXT_IS_NOT_EMPTY/);
+  it('пустой заголовок — ошибка', () => {
+    expect(() => editTitle(makeTask(), '   ', LATER)).toThrow(/TITLE_IS_NOT_EMPTY/);
+  });
+});
+
+describe('editText', () => {
+  it('меняет описание и ставит updatedAt', () => {
+    const edited = editText(makeTask(), '  подробности  ', LATER);
+
+    expect(edited.text).toBe('подробности');
+    expect(edited.updatedAt).toBe(LATER);
+  });
+
+  it('описание можно стереть: пустое — валидное состояние', () => {
+    const task = makeTask({ text: 'было описание' });
+    const cleared = editText(task, '   ', LATER);
+
+    expect(cleared.text).toBe('');
+    expect(cleared.updatedAt).toBe(LATER);
+  });
+
+  it('то же описание — та же задача', () => {
+    const task = makeTask({ text: 'подробности' });
+
+    expect(editText(task, 'подробности', LATER)).toBe(task);
   });
 });
 
@@ -229,18 +254,39 @@ describe('deleteTask', () => {
   });
 });
 
-describe('TIMESTAMPS_MONOTONIC_PER_TASK', () => {
-  it('каждая мутация, которой есть что менять, ставит updatedAt', () => {
-    const task = ranked('t', 'a1');
-    const mutated = [
-      editText(task, 'другой текст', LATER),
-      setStatus(task, 'done', NOWHERE, LATER),
-      setPriority(task, { assigned: false }, NOWHERE, LATER),
-      moveToZone(task, { zone: 'quadrant', quadrant: 'Q2' }, NOWHERE, LATER),
-      deleteTask(task, LATER),
-    ];
+/**
+ * TIMESTAMPS_MONOTONIC_PER_TASK держится двумя вещами: приватной `touch` внутри
+ * mutations.ts и этой таблицей.
+ *
+ * Тип `Record<keyof typeof mutations, ...>` требует строку на каждый экспорт —
+ * новая мутация без строки не скомпилируется. Сверка ключей ниже ловит обратное:
+ * строку, оставшуюся от удалённой мутации. Поэтому «забыли обновить updatedAt
+ * в новой функции» перестаёт быть возможным незаметно.
+ */
+const CHANGES: Record<keyof typeof mutations, (task: Task) => Task> = {
+  editTitle: (task) => editTitle(task, 'другой заголовок', LATER),
+  editText: (task) => editText(task, 'другое описание', LATER),
+  setStatus: (task) => setStatus(task, 'done', NOWHERE, LATER),
+  setPriority: (task) => setPriority(task, { assigned: false }, NOWHERE, LATER),
+  moveToZone: (task) =>
+    moveToZone(task, { zone: 'quadrant', quadrant: 'Q2' }, NOWHERE, LATER),
+  deleteTask: (task) => deleteTask(task, LATER),
+};
 
-    expect(mutated.map((result) => result.updatedAt)).toEqual(mutated.map(() => LATER));
-    expect(mutated.every((result) => result.createdAt === task.createdAt)).toBe(true);
+describe('TIMESTAMPS_MONOTONIC_PER_TASK', () => {
+  it('таблица покрывает ровно экспорты mutations.ts, без пропусков и хвостов', () => {
+    expect(Object.keys(CHANGES).sort()).toEqual(Object.keys(mutations).sort());
+  });
+
+  it('каждая мутация, которой есть что менять, ставит updatedAt и не трогает createdAt', () => {
+    for (const [name, apply] of Object.entries(CHANGES)) {
+      const task = ranked('t', 'a1');
+      const result = apply(task);
+
+      expect(result, name).not.toBe(task);
+      expect(result.updatedAt, name).toBe(LATER);
+      expect(result.createdAt, name).toBe(task.createdAt);
+      expect(result.id, name).toBe(task.id);
+    }
   });
 });

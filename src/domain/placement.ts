@@ -1,19 +1,11 @@
-import type { Placement, Priority, Quadrant, Task } from './types';
-
-type PriorityFlags = { urgent: boolean; important: boolean };
+import { QUADRANT_FLAGS } from './constants';
+import type { Placement, Priority, PriorityFlags, Quadrant, Task } from './types';
 
 /**
- * Единственная таблица соответствия «квадрант ↔ пара признаков»
- * (docs/specs/4-architecture.md §2). Обратное направление — `quadrantOf`;
- * что две функции не разошлись, проверяет тест на круговой обход.
+ * Обратная сторона `QUADRANT_FLAGS`. Таблица и эта функция описывают одно
+ * соответствие с двух сторон — что они не разошлись, проверяет тест
+ * на круговой обход в tests/domain/placement.test.ts.
  */
-const QUADRANT_FLAGS: Record<Quadrant, PriorityFlags> = {
-  Q1: { urgent: true, important: true },
-  Q2: { urgent: false, important: true },
-  Q3: { urgent: true, important: false },
-  Q4: { urgent: false, important: false },
-};
-
 function quadrantOf({ urgent, important }: PriorityFlags): Quadrant {
   if (important) return urgent ? 'Q1' : 'Q2';
   return urgent ? 'Q3' : 'Q4';
