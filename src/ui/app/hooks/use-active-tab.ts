@@ -7,8 +7,8 @@ import type { ActiveTab, TabId } from '../types';
  * (docs/specs/4-architecture.md §2, UiSettings = { listSort }), поэтому она не персистится
  * и после перезагрузки открывается вкладка по умолчанию.
  *
- * Ручной мемоизации здесь нет: setState от React стабилен между рендерами по контракту,
- * оборачивать его в useCallback нечего (CLAUDE.md, «Фронтенд»).
+ * Ручной мемоизации здесь нет: этим занимается React Compiler, а setState стабилен
+ * между рендерами по контракту React (CLAUDE.md §7).
  */
 export function useActiveTab(): ActiveTab {
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
