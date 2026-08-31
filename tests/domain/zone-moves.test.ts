@@ -1,12 +1,5 @@
-import {
-  ZONE_MOVES,
-  moveToZone,
-  resolvePlacement,
-  resolvePlacementByZone,
-  rankBetween,
-  resolveZoneByPlacement,
-} from '@/domain';
-import type { Neighbours, RankRule, Task, ZoneMove, ZoneMoveKey } from '@/domain';
+import { ZONE_MOVES, moveToZone, rankBetween, resolveZone } from '@/domain';
+import type { Neighbours, RankRule, Task, ZoneMoveKey } from '@/domain';
 
 import { LATER, ZONES, inZone } from './fixtures';
 
@@ -26,10 +19,7 @@ describe('ZONE_MOVES', () => {
 
     for (const from of ZONES) {
       for (const to of ZONES) {
-        const move: ZoneMove = ZONE_MOVES[`${from}->${to}`];
-
-        expect(move, `${from}->${to}`).toBeDefined();
-        expect(move.why.length, `${from}->${to}`).toBeGreaterThan(0);
+        expect(ZONE_MOVES[`${from}->${to}`], `${from}->${to}`).toBeDefined();
       }
     }
   });
@@ -39,7 +29,7 @@ describe('ZONE_MOVES', () => {
       for (const to of ZONES) {
         const expected: RankRule = to === 'inbox' ? 'keep' : 'regenerate';
 
-        expect(ZONE_MOVES[`${from}->${to}`].rank, `${from}->${to}`).toBe(expected);
+        expect(ZONE_MOVES[`${from}->${to}`], `${from}->${to}`).toBe(expected);
       }
     }
   });
@@ -52,11 +42,11 @@ describe('ZONE_MOVES', () => {
         const neighbour: Task = inZone(to, 'a5');
         const between: Neighbours = { before: neighbour, after: null };
 
-        const moved: Task = moveToZone(task, resolvePlacementByZone(to), between, LATER);
+        const moved: Task = moveToZone(task, to, between, LATER);
 
-        expect(resolveZoneByPlacement(resolvePlacement(moved)), label).toBe(to);
+        expect(resolveZone(moved), label).toBe(to);
 
-        if (ZONE_MOVES[label].rank === 'keep') {
+        if (ZONE_MOVES[label] === 'keep') {
           expect(moved.rank, label).toBe(task.rank);
         } else {
           expect(moved.rank, label).toBe(rankBetween(between));
@@ -68,8 +58,6 @@ describe('ZONE_MOVES', () => {
   it('переход внутри «Входящих» вообще ничего не меняет', () => {
     const task: Task = inZone('inbox', 'a1');
 
-    expect(moveToZone(task, resolvePlacementByZone('inbox'), { before: null, after: null }, LATER)).toBe(
-      task,
-    );
+    expect(moveToZone(task, 'inbox', { before: null, after: null }, LATER)).toBe(task);
   });
 });

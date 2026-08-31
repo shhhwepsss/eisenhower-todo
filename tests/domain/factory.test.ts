@@ -1,4 +1,4 @@
-import { createTask, resolvePlacement } from '@/domain';
+import { createTask, resolveZone } from '@/domain';
 import type { Task } from '@/domain';
 
 import { NOW } from './fixtures';
@@ -20,7 +20,7 @@ describe('createTask', () => {
       updatedAt: NOW,
       deletedAt: null,
     });
-    expect(resolvePlacement(task)).toEqual({ zone: 'inbox' });
+    expect(resolveZone(task)).toBe('inbox');
   });
 
   it('ID_IS_GLOBALLY_UNIQUE: id приходит снаружи, домен его не конструирует', () => {

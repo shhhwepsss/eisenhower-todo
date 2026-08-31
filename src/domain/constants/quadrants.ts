@@ -2,8 +2,8 @@ import type { PriorityFlags, Quadrant } from '../types';
 
 /**
  * Единственная таблица соответствия «квадрант → пара признаков»
- * (docs/specs/4-architecture.md §2). Обратное направление — `resolveQuadrantPlacement`
- * в placement.ts; что две стороны не разошлись, проверяет тест на круговой обход.
+ * (docs/specs/4-architecture.md §2). Обратное направление — `resolveQuadrantByFlags`
+ * в zone.ts; что две стороны не разошлись, проверяет тест на круговой обход.
  */
 export const QUADRANT_FLAGS: Record<Quadrant, PriorityFlags> = {
   Q1: { urgent: true, important: true },

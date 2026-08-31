@@ -1,9 +1,8 @@
 import { ZONE_MOVES } from './constants';
 import { isBetween, rankBetween } from './ordering';
-import { resolvePlacement, resolvePlacementByPriority, resolvePriorityByPlacement, isSamePlacement } from './placement';
 import { normalizeTaskText, normalizeTaskTitle } from './text';
-import { resolveZoneByPlacement } from './zone';
-import type { Neighbours, Placement, Priority, Task, TaskStatus, Zone, ZoneMove } from './types';
+import { resolvePriorityByZone, resolveZone, resolveZoneByPriority } from './zone';
+import type { Neighbours, Priority, RankRule, Task, TaskStatus, Zone } from './types';
 
 /**
  * Мутации задачи — чистые функции «задача + намерение + время → задача».
@@ -74,14 +73,14 @@ export const setPriority = (
   between: Neighbours,
   now: string,
 ): Task => {
-  const to: Placement = resolvePlacementByPriority(priority);
+  const to: Zone = resolveZoneByPriority(priority);
   return placeTask(task, to, between, now);
 };
 
 /** Перетаскивание: задача встаёт ровно между переданными соседями (PRD §3). */
 export const moveToZone = (
   task: Task,
-  to: Placement,
+  to: Zone,
   between: Neighbours,
   now: string,
 ): Task => placeTask(task, to, between, now);
@@ -101,24 +100,21 @@ export const deleteTask = (task: Task, now: string): Task => {
  * там построчно, и правило ранга читается оттуда, а не выводится здесь по месту.
  *
  * Тело читается сверху вниз по шагам, каждый шаг назван: где задача лежит сейчас,
- * куда её кладут, что таблица говорит про этот переход, надо ли вообще что-то делать,
- * какими становятся признаки и ранг.
+ * что таблица говорит про этот переход, надо ли вообще что-то делать, какими
+ * становятся признаки и ранг.
  */
-const placeTask = (task: Task, to: Placement, between: Neighbours, now: string): Task => {
-  const from: Placement = resolvePlacement(task);
-  const fromZone: Zone = resolveZoneByPlacement(from);
-  const toZone: Zone = resolveZoneByPlacement(to);
-  const move: ZoneMove = ZONE_MOVES[`${fromZone}->${toZone}`];
+const placeTask = (task: Task, to: Zone, between: Neighbours, now: string): Task => {
+  const from: Zone = resolveZone(task);
+  const rule: RankRule = ZONE_MOVES[`${from}->${to}`];
 
-  const staysPut: boolean = isSamePlacement(from, to)
-    && (move.rank === 'keep' || isBetween(task, between));
+  const staysPut: boolean = from === to && (rule === 'keep' || isBetween(task, between));
   if (staysPut) return task;
 
-  const priority: Priority = resolvePriorityByPlacement(to);
+  const priority: Priority = resolvePriorityByZone(to);
   const assigned: boolean = priority.assigned;
   const urgent: boolean = priority.assigned && priority.urgent;
   const important: boolean = priority.assigned && priority.important;
-  const rank: string = move.rank === 'regenerate' ? rankBetween(between) : task.rank;
+  const rank: string = rule === 'regenerate' ? rankBetween(between) : task.rank;
 
   return touch(task, { assigned, urgent, important, rank }, now);
 };

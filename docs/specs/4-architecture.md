@@ -180,7 +180,7 @@ type Task = {
 
 ```ts
 type Quadrant = 'Q1' | 'Q2' | 'Q3' | 'Q4';
-type Placement = { zone: 'inbox' } | { zone: 'quadrant'; quadrant: Quadrant };
+type Zone = 'inbox' | Quadrant;
 
 // Q1 = urgent && important, Q2 = !urgent && important
 // Q3 = urgent && !important, Q4 = !urgent && !important
@@ -261,7 +261,7 @@ type UiSettings = { listSort: ListSortKey };
   фильтруют `deletedAt === null`. Проверка: юнит-тест «удалённая задача отсутствует
   во всех выборках, но присутствует в снапшоте хранилища».
 - **`QUADRANT_IS_DERIVED`** — поля `quadrant` в модели нет. Проверка: тип `Task` не содержит
-  такого поля (проверяется компилятором), место задачи определяет одна функция `resolvePlacement`.
+  такого поля (проверяется компилятором), зону задачи определяет одна функция `resolveZone`.
 
 ---
 
@@ -452,7 +452,7 @@ useTaskActions(): TaskActions   // { addTask, editText, setStatus, setPriority, 
 - **Сборщик — Vite.** React без Next.js (PRD §7). Vite — дефолт для SPA: dev-сервер
   на нативных модулях, нулевая конфигурация, встроенная поддержка TS.
 - **Язык — TypeScript, `strict: true`.** Модель держится на размеченных объединениях
-  (`Priority`, `Placement`, `TaskStatus`): в TS невалидное состояние не компилируется,
+  (`Priority`, `Zone`, `TaskStatus`): в TS невалидное состояние не компилируется,
   и часть инвариантов проверяет компилятор, а не тест. Для проекта с продуманной моделью
   данных это самая дешёвая проверка из доступных.
 - **Тесты — Vitest.** Тот же конфиг, что у Vite; юнит-тесты домена, редьюсера, адаптера
@@ -466,7 +466,7 @@ useTaskActions(): TaskActions   // { addTask, editText, setStatus, setPriority, 
 
 ```
 src/
-  domain/      task.ts, placement.ts, ordering.ts, factory.ts   — типы и чистые правила
+  domain/      task.ts, zone.ts, ordering.ts, factory.ts        — типы и чистые правила
   storage/     repository.ts (порт), local-storage.ts, migrations.ts
   state/       index.ts (хуки — единственный вход для ui/), store.tsx, reducer.ts,
                actions.ts, selectors.ts
@@ -576,7 +576,7 @@ src/ui/app/
 | `SINGLE_SOURCE_OF_TRUTH` | Один стор, одно дерево состояния (§5). Вкладки — представления, копий не держат | Ревью: в `ui/` нет состояния, дублирующего поля задачи. Тест: действие в одном представлении видно в выборке другого |
 | `LIST_IS_COMPLETE` | Селектор списка не фильтрует ничего, кроме `deletedAt !== null` (§2) | Свойство-тест: объединение трёх групп списка = все живые задачи, для произвольного набора |
 | `DONE_LEAVES_MATRIX` | Селекторы матрицы (входящие + квадранты) исключают `status === 'done'` | Тест: задача в `done` отсутствует во всех выборках матрицы, включая «Входящие» |
-| `MATRIX_PARTITION` | `resolvePlacement(task)` — одна функция, возвращающая размеченное объединение `Placement`; вернуть две зоны невозможно по типу | Компилятор (сумма-тип) + свойство-тест: сумма размеров зон матрицы = число живых не-`done` задач |
+| `MATRIX_PARTITION` | `resolveZone(task)` — одна функция, возвращающая `Zone`: ровно одно из пяти значений, вернуть две зоны невозможно по типу | Компилятор (сумма-тип) + свойство-тест: сумма размеров зон матрицы = число живых не-`done` задач |
 | `LIST_PARTITION` | Группа выводится одной функцией `getTasksListGroup(task)` с сумма-типом `'inbox' \| 'assigned' \| 'done'` | Компилятор + свойство-тест: группы не пересекаются и покрывают всё |
 | `MANUAL_PRIORITISATION` | `assigned`/`urgent`/`important` меняют ровно два действия: `setPriority` и `moveToZone`. Ни `createTask`, ни `setStatus` их не касаются | Тест: `createTask` даёт `assigned: false`; `setStatus` в обе стороны не меняет тройку признаков |
 | `PRIORITY_SURVIVES_DONE` | То же: `setStatus` не трогает признаки | Тест: `todo → done → todo` сохраняет `assigned/urgent/important`; задача возвращается в тот же квадрант |
@@ -634,7 +634,7 @@ Vite + React + TypeScript (`strict`), Vitest, пустая структура п
 чем чинить нарушения задним числом в фазах 3 и 4.
 
 **Фаза 2 — Доменное ядро.**
-Типы `Task`, `Priority`, `Placement`, `TaskStatus`; `resolvePlacement`, `getTasksListGroup`, фабрика
+Типы `Task`, `Priority`, `Zone`, `TaskStatus`; `resolveZone`, `getTasksListGroup`, фабрика
 задачи, генерация и сравнение рангов, чистые функции мутаций. Без React и без хранилища.
 Мержится отдельно: код, покрытый тестами, никем ещё не вызываемый.
 Приёмка: тесты `MATRIX_PARTITION`, `LIST_PARTITION`, `RANK_TOTAL_ORDER`,

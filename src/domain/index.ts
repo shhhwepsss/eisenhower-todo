@@ -10,13 +10,11 @@ export {
   setStatus,
 } from './mutations';
 export { compareTasks, endOf, isBetween, rankBetween, sortByRank } from './ordering';
-export {
-  resolvePlacement,
-  resolvePlacementByPriority,
-  resolvePriority,
-  resolvePriorityByPlacement,
-  isSamePlacement,
-} from './placement';
 export { isTaskInMatrix, isTaskLive } from './visibility';
-export { resolvePlacementByZone, resolveZoneByPlacement } from './zone';
+export {
+  resolvePriority,
+  resolvePriorityByZone,
+  resolveZone,
+  resolveZoneByPriority,
+} from './zone';
 export type * from './types';

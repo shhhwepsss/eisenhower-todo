@@ -1,4 +1,4 @@
-import { createTask, resolvePlacementByZone, resolvePriorityByPlacement } from '@/domain';
+import { createTask, resolvePriorityByZone } from '@/domain';
 import type { Priority, Task, TaskStatus, Zone } from '@/domain';
 
 export const NOW: string = '2026-01-01T00:00:00.000Z';
@@ -17,7 +17,7 @@ export const ranked = (id: string, rank: string, overrides: Partial<Task> = {}):
 
 /** Задача, лежащая в названной зоне. Признаки выводятся из зоны, а не задаются руками. */
 export const inZone = (zone: Zone, rank: string, overrides: Partial<Task> = {}): Task => {
-  const priority: Priority = resolvePriorityByPlacement(resolvePlacementByZone(zone));
+  const priority: Priority = resolvePriorityByZone(zone);
   return makeTask({
     id: `task-${zone}-${rank}`,
     rank,

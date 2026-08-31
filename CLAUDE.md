@@ -239,12 +239,13 @@ curl -s http://127.0.0.1:5173/src/ui/app/App.tsx | head -20   # ищем _c( и 
 
 ```ts
 // Так
-export const zoneOf = (placement: Placement): Zone =>
-  placement.zone === 'inbox' ? 'inbox' : placement.quadrant;
+export const isTaskLive = (task: Task): boolean => {
+  return task.deletedAt === null;
+};
 
 // Не так
-export function zoneOf(placement: Placement): Zone { ... }
-const zoneOf = function (placement: Placement): Zone { ... };
+export function isTaskLive(task: Task): boolean { ... }
+const isTaskLive = function (task: Task): boolean { ... };
 ```
 
 ### Тип переменной виден на месте
@@ -255,11 +256,11 @@ const zoneOf = function (placement: Placement): Zone { ... };
 
 ```ts
 // Так
-const from: Placement = placementOf(task);
-const move: ZoneMove = ZONE_MOVES[`${fromZone}->${toZone}`];
+const from: Zone = resolveZone(task);
+const rule: RankRule = ZONE_MOVES[`${from}->${to}`];
 
 // Не так
-const from = placementOf(task);
+const from = resolveZone(task);
 ```
 
 Вместе с правилом «плоские шаги» это и даёт читаемое тело: каждый шаг назван и у
@@ -298,14 +299,14 @@ const from = placementOf(task);
 - однострочная функция, чьё тело — ровно один вызов (`moveToZone` → `placeTask`).
 
 ```ts
-// Не так: три уровня, читается изнутри наружу
-const move = ZONE_MOVES[`${zoneOf(placementOf(task))}->${zoneOf(to)}`];
+// Не так: вызов в аргументах вызова, читается изнутри наружу
+export const resolveZone = (task: Task): Zone => resolveZoneByPriority(resolvePriority(task));
 
-// Так: каждый шаг назван
-const from = placementOf(task);
-const fromZone = zoneOf(from);
-const toZone = zoneOf(to);
-const move = ZONE_MOVES[`${fromZone}->${toZone}`];
+// Так: промежуточный шаг назван
+export const resolveZone = (task: Task): Zone => {
+  const priority: Priority = resolvePriority(task);
+  return resolveZoneByPriority(priority);
+};
 ```
 
 Линтером не держится — правила, отличающего осмысленную вложенность от нечитаемой,

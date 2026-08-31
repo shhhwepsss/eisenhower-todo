@@ -6,8 +6,8 @@ import {
   endOf,
   isTaskLive,
   moveToZone,
-  resolvePlacement,
   rankBetween,
+  resolveZone,
   setPriority,
   setStatus,
 } from '@/domain';
@@ -92,7 +92,7 @@ describe('setStatus', () => {
     const done: Task = setStatus(task, 'done', NOWHERE, LATER);
     const back: Task = setStatus(done, 'todo', NOWHERE, LATER);
 
-    expect(resolvePlacement(back)).toEqual(resolvePlacement(task));
+    expect(resolveZone(back)).toBe(resolveZone(task));
     expect(priorityFields(back)).toEqual(priorityFields(task));
   });
 
@@ -131,7 +131,7 @@ describe('setPriority', () => {
       LATER,
     );
 
-    expect(resolvePlacement(assigned)).toEqual({ zone: 'quadrant', quadrant: 'Q1' });
+    expect(resolveZone(assigned)).toBe('Q1');
     expect(assigned.rank).toBe(rankBetween({ before: last, after: null }));
     expect(assigned.updatedAt).toBe(LATER);
   });
@@ -145,7 +145,7 @@ describe('setPriority', () => {
       urgent: false,
       important: false,
     });
-    expect(resolvePlacement(unassigned)).toEqual({ zone: 'inbox' });
+    expect(resolveZone(unassigned)).toBe('inbox');
   });
 
   it('RANK_IS_QUADRANT_LOCAL: смена квадранта генерирует ранг по соседям приёмника', () => {
@@ -159,7 +159,7 @@ describe('setPriority', () => {
       LATER,
     );
 
-    expect(resolvePlacement(moved)).toEqual({ zone: 'quadrant', quadrant: 'Q3' });
+    expect(resolveZone(moved)).toBe('Q3');
     expect(moved.rank).not.toBe(task.rank);
     expect(moved.rank).toBe(rankBetween({ before: lastInQ3, after: null }));
   });
@@ -187,15 +187,10 @@ describe('moveToZone', () => {
     const b: Task = ranked('b', 'a1');
     const task: Task = makeTask({ assigned: false });
 
-    const dropped: Task = moveToZone(
-      task,
-      { zone: 'quadrant', quadrant: 'Q1' },
-      { before: a, after: b },
-      LATER,
-    );
+    const dropped: Task = moveToZone(task, 'Q1', { before: a, after: b }, LATER);
 
     expect(dropped.rank).toBe('a0V');
-    expect(resolvePlacement(dropped)).toEqual({ zone: 'quadrant', quadrant: 'Q1' });
+    expect(resolveZone(dropped)).toBe('Q1');
   });
 
   it('бросок на собственное место — та же задача: ни ранга, ни updatedAt', () => {
@@ -203,9 +198,7 @@ describe('moveToZone', () => {
     const task: Task = ranked('t', 'a1');
     const c: Task = ranked('c', 'a2');
 
-    expect(
-      moveToZone(task, { zone: 'quadrant', quadrant: 'Q1' }, { before: a, after: c }, LATER),
-    ).toBe(task);
+    expect(moveToZone(task, 'Q1', { before: a, after: c }, LATER)).toBe(task);
   });
 
   it('бросок в тот же квадрант, но на другое место — новый ранг', () => {
@@ -213,12 +206,7 @@ describe('moveToZone', () => {
     const b: Task = ranked('b', 'a1');
     const task: Task = ranked('t', 'a2');
 
-    const moved: Task = moveToZone(
-      task,
-      { zone: 'quadrant', quadrant: 'Q1' },
-      { before: a, after: b },
-      LATER,
-    );
+    const moved: Task = moveToZone(task, 'Q1', { before: a, after: b }, LATER);
 
     expect(moved.rank).toBe('a0V');
     expect(moved.updatedAt).toBe(LATER);
@@ -226,9 +214,9 @@ describe('moveToZone', () => {
 
   it('возврат во «Входящие» снимает разбор и ранг не трогает', () => {
     const task: Task = ranked('t', 'a1');
-    const returned: Task = moveToZone(task, { zone: 'inbox' }, endOf([ranked('last', 'a5')]), LATER);
+    const returned: Task = moveToZone(task, 'inbox', endOf([ranked('last', 'a5')]), LATER);
 
-    expect(resolvePlacement(returned)).toEqual({ zone: 'inbox' });
+    expect(resolveZone(returned)).toBe('inbox');
     expect(returned.rank).toBe('a1');
     expect(returned.updatedAt).toBe(LATER);
   });
@@ -268,8 +256,7 @@ const CHANGES: Record<keyof typeof mutations, (task: Task) => Task> = {
   editText: (task) => editText(task, 'другое описание', LATER),
   setStatus: (task) => setStatus(task, 'done', NOWHERE, LATER),
   setPriority: (task) => setPriority(task, { assigned: false }, NOWHERE, LATER),
-  moveToZone: (task) =>
-    moveToZone(task, { zone: 'quadrant', quadrant: 'Q2' }, NOWHERE, LATER),
+  moveToZone: (task) => moveToZone(task, 'Q2', NOWHERE, LATER),
   deleteTask: (task) => deleteTask(task, LATER),
 };
 
