@@ -5,6 +5,14 @@ import type { LogLevel, Logger } from '@/shared/logger';
 
 const LEVELS: readonly LogLevel[] = ['debug', 'info', 'warn', 'error'];
 
+/** Время в префиксе меняется от запуска к запуску, поэтому сверяется формой. */
+const TIME: string = String.raw`\[\d{2}:\d{2}:\d{2}\.\d{3}\]`;
+
+const linePattern = (level: LogLevel, scope: string, message: string): RegExp => {
+  const tags: string = String.raw`\[${level}\] \[${scope}\]`;
+  return new RegExp(`^${TIME} ${tags} ${message}$`);
+};
+
 describe('logger', () => {
   let initial: LogLevel;
 
@@ -15,6 +23,7 @@ describe('logger', () => {
 
   afterEach(() => {
     setLogLevel(initial);
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -23,7 +32,18 @@ describe('logger', () => {
 
     createLog('storage')[level]('снапшот прочитан');
 
-    expect(spy).toHaveBeenCalledWith('[storage] снапшот прочитан');
+    const pattern: RegExp = linePattern(level, 'storage', 'снапшот прочитан');
+    expect(spy).toHaveBeenCalledWith(expect.stringMatching(pattern));
+  });
+
+  it('префикс — время, уровень и область в фиксированном порядке', () => {
+    const spy: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 31, 12, 3, 41, 220));
+
+    createLog('storage').warn('снапшот повреждён');
+
+    expect(spy).toHaveBeenCalledWith('[12:03:41.220] [warn] [storage] снапшот повреждён');
   });
 
   it('нагрузка передаётся отдельным аргументом, а не склеивается в строку', () => {
@@ -31,7 +51,8 @@ describe('logger', () => {
 
     createLog('ui/app').info('переключение вкладки', { from: 'list', to: 'matrix' });
 
-    expect(spy).toHaveBeenCalledWith('[ui/app] переключение вкладки', {
+    const pattern: RegExp = linePattern('info', 'ui/app', 'переключение вкладки');
+    expect(spy).toHaveBeenCalledWith(expect.stringMatching(pattern), {
       from: 'list',
       to: 'matrix',
     });
@@ -58,6 +79,7 @@ describe('logger', () => {
 
     Log.warn('без своей области');
 
-    expect(spy).toHaveBeenCalledWith('[app] без своей области');
+    const pattern: RegExp = linePattern('warn', 'app', 'без своей области');
+    expect(spy).toHaveBeenCalledWith(expect.stringMatching(pattern));
   });
 });

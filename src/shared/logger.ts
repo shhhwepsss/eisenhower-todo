@@ -24,7 +24,6 @@ export type Logger = {
 
 const SEVERITY: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
-
 /**
  * В разработке видно всё, в проде — только то, что требует внимания.
  * Порог глобальный и меняется на лету: `setLogLevel` нужен и тестам,
@@ -39,13 +38,29 @@ export const setLogLevel = (level: LogLevel): void => {
 export const getLogLevel = (): LogLevel => threshold;
 
 /**
+ * Локальное время с миллисекундами: по нему видно, что за чем шло и сколько
+ * между этим прошло. Дата не пишется — вкладка живёт минуты, а не дни.
+ */
+const formatTime = (now: Date): string => {
+  const clock: string = now.toTimeString().slice(0, 8);
+  const millis: number = now.getMilliseconds();
+  return `${clock}.${String(millis).padStart(3, '0')}`;
+};
+
+/**
  * Имена уровней намеренно совпадают с методами консоли, и метод берётся в момент
  * записи, а не при загрузке модуля: иначе логгер держал бы ссылку на исходный
  * `console` и не заметил бы его подмены — ни в тестах, ни при перехвате логов.
+ *
+ * Время и уровень стоят в самой строке, а не только в оформлении консоли:
+ * скопированная строка лога должна отвечать «когда» и «насколько плохо»
+ * без исходной вкладки devtools.
  */
 const write = (level: LogLevel, scope: string, message: string, payload?: LogPayload): void => {
   if (SEVERITY[level] < SEVERITY[threshold]) return;
-  const prefix: string = `[${scope}] ${message}`;
+  const now: Date = new Date();
+  const time: string = formatTime(now);
+  const prefix: string = `[${time}] [${level}] [${scope}] ${message}`;
   if (payload === undefined) console[level](prefix);
   else console[level](prefix, payload);
 };
