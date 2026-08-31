@@ -1,14 +1,14 @@
 export { QUADRANT_FLAGS, QUADRANTS } from './constants';
 export { createTask } from './factory';
-export { listGroupForTask } from './list-group';
+export { getTasksListGroup } from './list-group';
 export { compareTasks, endOf, isBetween, rankBetween, sortByRank } from './ordering';
 export {
-  placementOf,
-  placementOfPriority,
-  priorityOf,
-  priorityOfPlacement,
-  samePlacement,
+  isSamePlacement,
+  resolvePlacement,
+  resolvePlacementByPriority,
+  resolvePriority,
+  resolvePriorityByPlacement,
 } from './placement';
-export { isInMatrix, isLive } from './visibility';
-export { placementOfZone, zoneOf } from './zone';
+export { isTaskInMatrix, isTaskLive } from './visibility';
+export { resolvePlacementByZone, resolveZoneByPlacement } from './zone';
 export type * from './types';

@@ -5,7 +5,7 @@ import type { Task } from './types';
  * docs/specs/4-architecture.md §2). Удалённая остаётся в снапшоте,
  * но не попадает ни в одну выборку.
  */
-export function isLive(task: Task): boolean {
+export function isTaskLive(task: Task): boolean {
   return task.deletedAt === null;
 }
 
@@ -13,6 +13,6 @@ export function isLive(task: Task): boolean {
  * Задача видна в матрице — DONE_LEAVES_MATRIX (docs/specs/4-architecture.md §9).
  * Завершённая уходит из матрицы целиком, включая зону «Входящие».
  */
-export function isInMatrix(task: Task): boolean {
-  return isLive(task) && task.status !== 'done';
+export function isTaskInMatrix(task: Task): boolean {
+  return isTaskLive(task) && task.status !== 'done';
 }
