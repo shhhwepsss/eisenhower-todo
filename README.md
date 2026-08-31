@@ -62,6 +62,7 @@ src/domain/
 
 src/shared/
   logger.ts         Log.debug / info / warn / error, соглашения — CLAUDE.md §9
+  errors.ts         describeError — ошибка в нагрузку лога отдельными ключами
 
 src/styles/         global.scss (:root, body), _tokens.scss (сырые значения)
 src/shared/styles/  общие миксины оформления
