@@ -48,6 +48,22 @@ src/ui/app/
   constants/        константы слайса
   types/            по файлу на тип + index.ts
 
+src/domain/
+  index.ts          публичный контракт слоя
+  types/            по файлу на тип + index.ts
+  constants/        QUADRANT_FLAGS и ZONE_MOVES — таблица всех 25 переходов между зонами
+  zone.ts           resolveZone / resolvePriority — в какой зоне лежит задача
+  list-group.ts     getTasksListGroup — в какой группе списка
+  visibility.ts     isTaskLive / isTaskInMatrix — надгробия и done
+  ordering.ts       ранги: генерация, сравнение, сортировка квадранта
+  factory.ts        createTask — единственная дверь в Task
+  mutations.ts      чистые мутации задачи; updatedAt пишется только в touch
+  text.ts           нормализация заголовка и описания
+
+src/shared/
+  logger.ts         Log.debug / info / warn / error, соглашения — CLAUDE.md §9
+  errors.ts         describeError — ошибка в нагрузку лога отдельными ключами
+
 src/styles/         global.scss (:root, body), _tokens.scss (сырые значения)
 src/shared/styles/  общие миксины оформления
 
