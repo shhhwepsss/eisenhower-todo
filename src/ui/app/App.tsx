@@ -4,7 +4,7 @@ import { Tabs } from './children/Tabs';
 import { useActiveTab } from './hooks/use-active-tab';
 import styles from './App.module.scss';
 
-export function App() {
+export const App = () => {
   const { activeTab, selectTab } = useActiveTab();
 
   return (
@@ -14,4 +14,4 @@ export function App() {
       {activeTab === 'list' ? <ListTab /> : <MatrixTab />}
     </main>
   );
-}
+};

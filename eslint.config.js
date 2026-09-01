@@ -20,6 +20,11 @@ const STATE_ACCESS_VIA_HOOKS =
   'STATE_ACCESS_VIA_HOOKS (docs/specs/4-architecture.md §5): ui/ импортирует из state/ ' +
   'только точку входа с хуками, но не reducer/actions/store/selectors.';
 
+const ARROW_FUNCTIONS_ONLY =
+  'ARROW_FUNCTIONS_ONLY (CLAUDE.md §8): функции объявляются стрелочными выражениями. ' +
+  'Одна форма на весь проект — читателю не приходится держать в голове разницу ' +
+  'между объявлением и выражением, а `this` и хойстинг не зависят от способа записи.';
+
 const SLICE_PUBLIC_API =
   'SLICE_PUBLIC_API: чужой слайс импортируется через его index.ts по алиасу @/, ' +
   'например "@/ui/list". Внутренности (App.tsx, tabs.tsx, lib/, types.ts) — приватные.';
@@ -42,6 +47,16 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'func-style': ['error', 'expression', { allowArrowFunctions: true }],
+      'prefer-arrow-callback': ['error', { allowNamedFunctions: false }],
+      '@typescript-eslint/typedef': [
+        'error',
+        { variableDeclaration: true, variableDeclarationIgnoreFunction: true },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        { selector: 'FunctionExpression', message: ARROW_FUNCTIONS_ONLY },
+      ],
     },
   },
 

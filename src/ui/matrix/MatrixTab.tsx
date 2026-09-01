@@ -1,6 +1,6 @@
 import styles from './MatrixTab.module.scss';
 
-export function MatrixTab() {
+export const MatrixTab = () => {
   return (
     <section
       className={styles.panel}
@@ -11,4 +11,4 @@ export function MatrixTab() {
       <p className={styles.placeholder}>Матрица появится в фазе 5.</p>
     </section>
   );
-}
+};
