@@ -6,21 +6,21 @@ import { ESLint, type Linter } from 'eslint';
  * по коду, которого в репозитории нет, поэтому правила проверяемы до появления
  * storage/ и state/.
  */
-const UI_FILE = 'src/ui/task/boundary-fixture.tsx';
+const UI_FILE: string = 'src/ui/task/boundary-fixture.tsx';
 
-async function lintAsUiModule(code: string): Promise<Linter.LintMessage[]> {
-  const eslint = new ESLint();
+const lintAsUiModule = async (code: string): Promise<Linter.LintMessage[]> => {
+  const eslint: ESLint = new ESLint();
   const [result] = await eslint.lintText(code, { filePath: UI_FILE });
   return result?.messages ?? [];
-}
+};
 
-function ruleIds(messages: Linter.LintMessage[]): (string | null)[] {
+const ruleIds = (messages: Linter.LintMessage[]): (string | null)[] => {
   return messages.map((message) => message.ruleId);
-}
+};
 
 describe('STORAGE_IS_ISOLATED', () => {
   it('запрещает импорт storage/ из ui/ по относительному пути', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { repository } from '../../storage/local-storage';\nexport const used = repository;\n",
     );
 
@@ -28,7 +28,7 @@ describe('STORAGE_IS_ISOLATED', () => {
   });
 
   it('запрещает импорт storage/ из ui/ по алиасу', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { repository } from '@/storage/local-storage';\nexport const used = repository;\n",
     );
 
@@ -36,7 +36,7 @@ describe('STORAGE_IS_ISOLATED', () => {
   });
 
   it('запрещает обращение к localStorage из ui/', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "export const raw = localStorage.getItem('tasks') ?? window.localStorage.length;\n",
     );
 
@@ -48,7 +48,7 @@ describe('STORAGE_IS_ISOLATED', () => {
 
 describe('STATE_ACCESS_VIA_HOOKS', () => {
   it('запрещает импорт внутренностей state/ из ui/', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { reducer } from '@/state/reducer';\nexport const used = reducer;\n",
     );
 
@@ -56,7 +56,7 @@ describe('STATE_ACCESS_VIA_HOOKS', () => {
   });
 
   it('разрешает импорт точки входа state/', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { useInboxTasks } from '@/state';\nexport const used = useInboxTasks;\n",
     );
 
@@ -66,7 +66,7 @@ describe('STATE_ACCESS_VIA_HOOKS', () => {
 
 describe('SLICE_PUBLIC_API', () => {
   it('запрещает импорт внутренностей чужого слайса', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { Tabs } from '@/ui/app/children/Tabs';\nexport const used = Tabs;\n",
     );
 
@@ -74,7 +74,7 @@ describe('SLICE_PUBLIC_API', () => {
   });
 
   it('запрещает импорт из hooks/ чужого слайса', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { useActiveTab } from '@/ui/app/hooks/use-active-tab';\nexport const used = useActiveTab;\n",
     );
 
@@ -82,7 +82,7 @@ describe('SLICE_PUBLIC_API', () => {
   });
 
   it('запрещает обход index.ts относительным путём через два уровня', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { App } from '../../ui/app/App';\nexport const used = App;\n",
     );
 
@@ -90,7 +90,7 @@ describe('SLICE_PUBLIC_API', () => {
   });
 
   it('разрешает импорт слайса через его index.ts', async () => {
-    const messages = await lintAsUiModule(
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
       "import { ListTab } from '@/ui/list';\nexport const used = ListTab;\n",
     );
 

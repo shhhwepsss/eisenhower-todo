@@ -1,14 +1,20 @@
-export { QUADRANT_FLAGS, QUADRANTS } from './constants';
+export { QUADRANT_FLAGS, QUADRANTS, ZONE_MOVES } from './constants';
 export { createTask } from './factory';
 export { getTasksListGroup } from './list-group';
-export { compareTasks, endOf, isBetween, rankBetween, sortByRank } from './ordering';
 export {
-  isSamePlacement,
-  resolvePlacement,
-  resolvePlacementByPriority,
-  resolvePriority,
-  resolvePriorityByPlacement,
-} from './placement';
+  deleteTask,
+  editText,
+  editTitle,
+  moveToZone,
+  setPriority,
+  setStatus,
+} from './mutations';
+export { compareTasks, endOf, isBetween, rankBetween, sortByRank } from './ordering';
 export { isTaskInMatrix, isTaskLive } from './visibility';
-export { resolvePlacementByZone, resolveZoneByPlacement } from './zone';
+export {
+  resolvePriority,
+  resolvePriorityByZone,
+  resolveZone,
+  resolveZoneByPriority,
+} from './zone';
 export type * from './types';

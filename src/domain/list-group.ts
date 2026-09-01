@@ -7,7 +7,7 @@ import type { ListGroup, Task } from './types';
  * Порядок проверок и есть правило: завершённая задача уходит в «Выполненные»
  * независимо от разбора, поэтому PRIORITY_SURVIVES_DONE группу не ломает.
  */
-export function getTasksListGroup(task: Task): ListGroup {
+export const getTasksListGroup = (task: Task): ListGroup => {
   if (task.status === 'done') return 'done';
   return task.assigned ? 'assigned' : 'inbox';
-}
+};

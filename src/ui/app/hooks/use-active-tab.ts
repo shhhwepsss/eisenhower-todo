@@ -10,8 +10,8 @@ import type { ActiveTab, TabId } from '../types';
  * Ручной мемоизации здесь нет: этим занимается React Compiler, а setState стабилен
  * между рендерами по контракту React (CLAUDE.md §7).
  */
-export function useActiveTab(): ActiveTab {
+export const useActiveTab = (): ActiveTab => {
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
 
   return { activeTab, selectTab: setActiveTab };
-}
+};

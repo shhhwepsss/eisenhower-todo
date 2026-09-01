@@ -1,5 +1,5 @@
-import { isTaskLive, getTasksListGroup } from '@/domain';
-import type { ListGroup } from '@/domain';
+import { getTasksListGroup, isTaskLive } from '@/domain';
+import type { ListGroup, Task } from '@/domain';
 
 import { allTaskVariants, makeTask } from './fixtures';
 
@@ -19,19 +19,19 @@ describe('getTasksListGroup', () => {
 });
 
 describe('LIST_PARTITION', () => {
-  const live = allTaskVariants().filter(isTaskLive);
+  const live: Task[] = allTaskVariants().filter(isTaskLive);
 
   it('три группы не пересекаются и в объединении дают все живые задачи', () => {
     const groups: Record<ListGroup, string[]> = { inbox: [], assigned: [], done: [] };
     for (const task of live) groups[getTasksListGroup(task)].push(task.id);
 
-    const union = [...groups.inbox, ...groups.assigned, ...groups.done];
+    const union: string[] = [...groups.inbox, ...groups.assigned, ...groups.done];
     expect(new Set(union).size).toBe(union.length);
     expect(union.length).toBe(live.length);
   });
 
   it('LIST_IS_COMPLETE: список не фильтрует ничего, кроме надгробий', () => {
-    const all = allTaskVariants();
+    const all: Task[] = allTaskVariants();
 
     expect(live.length).toBe(all.filter((task) => task.deletedAt === null).length);
   });
