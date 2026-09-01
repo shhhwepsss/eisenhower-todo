@@ -60,6 +60,18 @@ src/domain/
   mutations.ts      чистые мутации задачи; updatedAt пишется только в touch
   text.ts           нормализация заголовка и описания
 
+src/storage/
+  index.ts          публичный контракт слоя: createRepositories, ошибки, типы
+  types/            порты TaskRepository / SettingsRepository, KeyValueStorage
+  constants/        SCHEMA_VERSION и ключи хранилища
+  envelope.ts       конверт { version, ...данные }: вскрыть и запечатать
+  guards.ts         проверки формы для данных, пришедших из хранилища
+  log.ts            логгер слоя: одна область на всё хранилище
+  decode.ts         содержимое конверта → Task[] и UiSettings
+  local-storage.ts  адаптер снапшотов поверх KeyValueStorage
+  memory.ts         запасное хранилище на время жизни вкладки
+  create.ts         вход в слой: единственное место, где берётся localStorage
+
 src/shared/
   logger.ts         Log.debug / info / warn / error, соглашения — CLAUDE.md §9
   errors.ts         describeError — ошибка в нагрузку лога отдельными ключами
