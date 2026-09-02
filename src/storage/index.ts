@@ -5,5 +5,6 @@
  * хранилища и разбор — внутренности слоя: у них один потребитель, и он здесь же.
  * `ui/` не ходит сюда вовсе — STORAGE_IS_ISOLATED, правило ESLint в eslint.config.js.
  */
+export { createRepositories } from './create';
 export { isStorageError, storageError } from './errors';
 export type * from './types';
