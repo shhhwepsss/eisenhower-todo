@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION } from './constants';
 import { storageError } from './errors';
+import { isRecord } from './guards';
 import type { SnapshotEnvelope } from './types';
 
 /**
@@ -12,10 +13,6 @@ import type { SnapshotEnvelope } from './types';
  * Каждый отказ несёт исходную строку: она единственное, что осталось от данных
  * пользователя (RAW_SNAPSHOT_SURVIVES_FAILURE), и по ней их ещё можно достать руками.
  */
-
-const isEnvelope = (value: unknown): value is SnapshotEnvelope => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-};
 
 const parseJson = (raw: string): unknown => {
   try {
@@ -49,7 +46,7 @@ const readVersion = (envelope: SnapshotEnvelope, raw: string): number => {
  */
 export const openEnvelope = (raw: string): SnapshotEnvelope => {
   const parsed: unknown = parseJson(raw);
-  if (!isEnvelope(parsed)) {
+  if (!isRecord(parsed)) {
     throw storageError('unreadable', 'снапшот разобрался, но это не объект', { raw });
   }
 

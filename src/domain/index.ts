@@ -1,4 +1,4 @@
-export { QUADRANT_FLAGS, QUADRANTS, ZONE_MOVES } from './constants';
+export { DEFAULT_UI_SETTINGS, QUADRANT_FLAGS, QUADRANTS, ZONE_MOVES } from './constants';
 export { createTask } from './factory';
 export { getTasksListGroup } from './list-group';
 export {
