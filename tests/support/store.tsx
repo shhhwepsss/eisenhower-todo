@@ -20,6 +20,8 @@ export type FakeStorageOptions = {
   settings?: UiSettings;
   loadFails?: boolean;
   persistent?: boolean;
+  /** Уже существующее хранилище — чтобы пережить перемонтирование приложения. */
+  storage?: FakeStorage;
 };
 
 export const createFakeStorage = (options: FakeStorageOptions = {}): FakeStorage => {
@@ -62,7 +64,7 @@ export const renderWithStore = async (
   ui: ReactNode,
   options: FakeStorageOptions = {},
 ): Promise<StoreRender> => {
-  const storage: FakeStorage = createFakeStorage(options);
+  const storage: FakeStorage = options.storage ?? createFakeStorage(options);
   const rendered: RenderResult = render(
     <AppStateProvider repositories={storage.repositories}>{ui}</AppStateProvider>,
   );
