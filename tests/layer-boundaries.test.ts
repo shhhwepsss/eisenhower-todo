@@ -64,6 +64,30 @@ describe('STATE_ACCESS_VIA_HOOKS', () => {
   });
 });
 
+describe('DND_IS_UI_ONLY', () => {
+  const lintAsStateModule = async (code: string): Promise<Linter.LintMessage[]> => {
+    const eslint: ESLint = new ESLint();
+    const [result] = await eslint.lintText(code, { filePath: 'src/state/dnd-fixture.ts' });
+    return result?.messages ?? [];
+  };
+
+  it('запрещает импорт @dnd-kit вне ui/', async () => {
+    const messages: Linter.LintMessage[] = await lintAsStateModule(
+      "import { useSortable } from '@dnd-kit/sortable';\nexport const used = useSortable;\n",
+    );
+
+    expect(ruleIds(messages)).toContain('no-restricted-imports');
+  });
+
+  it('разрешает импорт @dnd-kit внутри ui/', async () => {
+    const messages: Linter.LintMessage[] = await lintAsUiModule(
+      "import { useSortable } from '@dnd-kit/sortable';\nexport const used = useSortable;\n",
+    );
+
+    expect(ruleIds(messages)).not.toContain('no-restricted-imports');
+  });
+});
+
 describe('SLICE_PUBLIC_API', () => {
   it('запрещает импорт внутренностей чужого слайса', async () => {
     const messages: Linter.LintMessage[] = await lintAsUiModule(

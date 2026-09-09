@@ -1,0 +1,27 @@
+@use '../../../styles/tokens' as *;
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: $space-xs;
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+.handle {
+  padding: $space-xs;
+  border: none;
+  border-radius: $radius-sm;
+  background: none;
+  font: inherit;
+  color: $color-muted;
+  line-height: 1;
+  cursor: grab;
+}
+
+.handle:focus-visible {
+  outline: 2px solid $color-border;
+}

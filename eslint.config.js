@@ -25,6 +25,10 @@ const ARROW_FUNCTIONS_ONLY =
   'Одна форма на весь проект — читателю не приходится держать в голове разницу ' +
   'между объявлением и выражением, а `this` и хойстинг не зависят от способа записи.';
 
+const DND_IS_UI_ONLY =
+  'DND_IS_UI_ONLY (docs/specs/4-architecture.md §7): перетаскивание — деталь интерфейса. ' +
+  'Домен, стор и хранилище про @dnd-kit не знают: наружу оно отдаёт соседей, а не жест.';
+
 const SLICE_PUBLIC_API =
   'SLICE_PUBLIC_API: чужой слайс импортируется через его index.ts по алиасу @/, ' +
   'например "@/ui/list". Внутренности (App.tsx, tabs.tsx, lib/, types.ts) — приватные.';
@@ -81,6 +85,16 @@ export default tseslint.config(
         'error',
         { object: 'window', property: 'localStorage', message: STORAGE_IS_ISOLATED },
         { object: 'globalThis', property: 'localStorage', message: STORAGE_IS_ISOLATED },
+      ],
+    },
+  },
+
+  {
+    files: ['src/domain/**/*.ts', 'src/state/**/*.{ts,tsx}', 'src/storage/**/*.ts', 'src/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['@dnd-kit', '@dnd-kit/**'], message: DND_IS_UI_ONLY }] },
       ],
     },
   },

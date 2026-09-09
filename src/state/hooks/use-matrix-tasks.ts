@@ -13,14 +13,21 @@ import type { Store } from '../types';
  */
 
 /**
- * «Входящие» упорядочены по дате создания, новые сверху (PRD §3). Ранг здесь
- * не читается: порядок вычисляется и у задачи не хранится —
- * DERIVED_ORDER_IS_NOT_STORED.
+ * Порядок «Входящих»: по дате создания, новые сверху (PRD §3). Ранг здесь
+ * не читается — порядок вычисляется и у задачи не хранится
+ * (DERIVED_ORDER_IS_NOT_STORED).
+ *
+ * Вынесено из хука, потому что тот же порядок нужен `useMatrixZones`, а два
+ * места, сортирующие «Входящие» по-своему, — это будущее расхождение.
  */
+export const sortInboxByFreshness = (tasks: readonly Task[]): Task[] => {
+  return [...tasks].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+};
+
 export const useInboxTasks = (): Task[] => {
   const { state }: Store = useStore();
   const inbox: Task[] = tasksInZone(state.tasks, 'inbox');
-  return [...inbox].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return sortInboxByFreshness(inbox);
 };
 
 /** Порядок внутри квадранта — ручной, по рангу (ORDER_IS_PERSISTENT). */
