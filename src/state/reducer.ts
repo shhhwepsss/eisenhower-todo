@@ -22,6 +22,9 @@ import type { Action, AppState } from './types';
  * Домен по правилу CLAUDE.md §9 молчит, а его мутации возвращают ту же задачу,
  * когда менять нечего. Значит «действие свернулось в no-op» видно только отсюда —
  * сравнением ссылки до и после, и логируется тоже отсюда.
+ *
+ * Действия хранилища (`snapshot/loaded`, `storage/failed`) чистоты не нарушают:
+ * читает и пишет эффект в провайдере, сюда приезжает уже готовый результат.
  */
 
 /** Мутация задачи в терминах домена: задача плюс намерение — новая задача. */
@@ -88,5 +91,19 @@ export const reducer = (state: AppState, action: Action): AppState => {
       );
     case 'task/deleted':
       return applyToTask(state, action.id, (task) => deleteTask(task, action.now));
+    case 'snapshot/loaded': {
+      log.info('снапшот прочитан', { count: action.tasks.length, listSort: action.ui.listSort });
+      return { ...state, tasks: action.tasks, ui: action.ui };
+    }
+    case 'storage/failed': {
+      if (state.storage === 'error') return state;
+      log.warn('хранилище отказало: персист выключен до конца сессии');
+      return { ...state, storage: 'error' };
+    }
+    case 'list-sort/selected': {
+      if (state.ui.listSort === action.key) return state;
+      log.info('сортировка списка выбрана', { from: state.ui.listSort, to: action.key });
+      return { ...state, ui: { ...state.ui, listSort: action.key } };
+    }
   }
 };

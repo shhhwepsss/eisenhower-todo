@@ -4,6 +4,9 @@ import type { Root } from 'react-dom/client';
 import { describeError } from '@/shared/errors';
 import { createLog, getLogLevel } from '@/shared/logger';
 import type { LogPayload, Logger } from '@/shared/logger';
+import { AppStateProvider } from '@/state';
+import { createRepositories } from '@/storage';
+import type { Repositories } from '@/storage';
 import { App } from '@/ui/app';
 import '@/styles/global.scss';
 
@@ -63,9 +66,20 @@ const root: Root = createRoot(container, {
   },
 });
 
+/**
+ * Единственное место, где выбирается реализация хранилища (спека §4):
+ * слой состояния знает только порт, а подстановка происходит здесь, на входе.
+ */
+const repositories: Repositories = createRepositories();
+if (!repositories.persistent) {
+  log.warn('постоянного хранилища нет: задачи не переживут перезагрузку вкладки');
+}
+
 root.render(
   <StrictMode>
-    <App />
+    <AppStateProvider repositories={repositories}>
+      <App />
+    </AppStateProvider>
   </StrictMode>,
 );
 
