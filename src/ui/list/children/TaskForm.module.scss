@@ -1,0 +1,32 @@
+@use '../../../styles/tokens' as *;
+
+.form {
+  display: flex;
+  gap: $space-sm;
+  flex: 1 1 20rem;
+}
+
+.input {
+  flex: 1;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+
+.submit {
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  color: $color-muted;
+  cursor: not-allowed;
+}

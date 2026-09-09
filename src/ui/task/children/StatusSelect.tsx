@@ -19,7 +19,7 @@ export const StatusSelect = ({ task }: TaskProps) => {
     <select
       className={styles.select}
       value={task.status}
-      aria-label={`Статус задачи «${task.title}»`}
+      aria-label="Статус"
       onChange={(event) => setStatus(task.id, event.target.value as TaskStatus)}
     >
       {STATUSES.map((status) => (

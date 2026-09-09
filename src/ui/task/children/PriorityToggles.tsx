@@ -29,7 +29,6 @@ export const PriorityToggles = ({ task }: TaskProps) => {
         <input
           type="checkbox"
           checked={urgent}
-          aria-label={`Срочная: «${task.title}»`}
           onChange={(event) => assign({ urgent: event.target.checked, important })}
         />
         Срочная
@@ -38,7 +37,6 @@ export const PriorityToggles = ({ task }: TaskProps) => {
         <input
           type="checkbox"
           checked={important}
-          aria-label={`Важная: «${task.title}»`}
           onChange={(event) => assign({ urgent, important: event.target.checked })}
         />
         Важная

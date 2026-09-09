@@ -22,8 +22,14 @@ const NEW: string = '2026-02-01T10:00:00.000Z';
 const zone = (name: string): HTMLElement => screen.getByRole('region', { name });
 
 const cardTitles = (name: string): string[] => {
-  const headings: HTMLElement[] = within(zone(name)).queryAllByRole('heading', { level: 3 });
-  return headings.map((heading) => heading.textContent ?? '');
+  const cards: HTMLElement[] = within(zone(name)).queryAllByRole('article');
+  return cards.map((card) => card.getAttribute('aria-label') ?? '');
+};
+
+const card = (title: string): HTMLElement => screen.getByRole('article', { name: title });
+
+const toggle = async (title: string, flag: string): Promise<void> => {
+  await userEvent.click(within(card(title)).getByRole('checkbox', { name: flag }));
 };
 
 describe('зона «Входящие»', () => {
@@ -46,8 +52,8 @@ describe('разбор переключателями', () => {
   it('оба признака переносят задачу из «Входящих» в Q1', async () => {
     await renderWithStore(<MatrixTab />, { stored: [task('написать спеку', OLD)] });
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Срочная: «написать спеку»' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Важная: «написать спеку»' }));
+    await toggle('написать спеку', 'Срочная');
+    await toggle('написать спеку', 'Важная');
 
     expect(cardTitles('Входящие')).toEqual([]);
     expect(cardTitles('Делать сейчас')).toEqual(['написать спеку']);
@@ -61,8 +67,8 @@ describe('разбор переключателями', () => {
       ],
     });
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Срочная: «вторая»' }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Важная: «вторая»' }));
+    await toggle('вторая', 'Срочная');
+    await toggle('вторая', 'Важная');
 
     expect(cardTitles('Делать сейчас')).toEqual(['первая', 'вторая']);
   });
@@ -74,7 +80,7 @@ describe('разбор переключателями', () => {
 
     expect(cardTitles('Минимизировать')).toEqual(['прибраться']);
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Срочная: «прибраться»' }));
+    await toggle('прибраться', 'Срочная');
 
     expect(cardTitles('Не делать')).toEqual(['прибраться']);
     expect(cardTitles('Входящие')).toEqual([]);
@@ -88,7 +94,7 @@ describe('DONE_LEAVES_MATRIX', () => {
     });
 
     await userEvent.selectOptions(
-      screen.getByRole('combobox', { name: 'Статус задачи «написать спеку»' }),
+      within(card('написать спеку')).getByRole('combobox', { name: 'Статус' }),
       'done',
     );
 

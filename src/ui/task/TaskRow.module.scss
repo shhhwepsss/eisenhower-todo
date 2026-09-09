@@ -1,0 +1,16 @@
+@use '../../styles/tokens' as *;
+
+.row {
+  display: grid;
+  gap: $space-xs;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  flex-wrap: wrap;
+}

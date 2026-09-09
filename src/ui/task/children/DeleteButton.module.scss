@@ -1,0 +1,19 @@
+@use '../../../styles/tokens' as *;
+
+.button {
+  margin-left: auto;
+  padding: $space-xs $space-sm;
+  border: 1px solid transparent;
+  border-radius: $radius-sm;
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: $color-muted;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $color-danger;
+    color: $color-danger;
+  }
+}
