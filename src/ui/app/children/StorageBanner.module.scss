@@ -1,0 +1,19 @@
+@use '../../../styles/tokens' as *;
+
+.error,
+.warning {
+  margin: 0 0 $space-md;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  font-size: 0.8125rem;
+}
+
+.error {
+  border-color: $color-danger;
+  color: $color-danger;
+}
+
+.warning {
+  color: $color-muted;
+}

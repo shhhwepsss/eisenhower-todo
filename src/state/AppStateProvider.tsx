@@ -22,7 +22,10 @@ import type { AppStateProviderProps, Store } from './types';
  * без моков, а хранилище получает уже применённое состояние.
  */
 export const AppStateProvider = ({ repositories, children }: AppStateProviderProps) => {
-  const [state, dispatch] = useReducer(reducer, INITIAL_APP_STATE);
+  const [state, dispatch] = useReducer(reducer, {
+    ...INITIAL_APP_STATE,
+    persistent: repositories.persistent,
+  });
 
   /**
    * Что уже лежит в хранилище. Персист сравнивает ссылки с этими двумя: снапшот,

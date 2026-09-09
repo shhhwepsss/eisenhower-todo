@@ -49,7 +49,7 @@ const createFakes = (options: FakeOptions = {}): Fakes => {
   const { stored = [], loadFails = false, saveFails = false } = options;
 
   const loadAll: Mock = vi.fn(async (): Promise<Task[]> => {
-    if (loadFails) throw storageError('corrupted', 'снапшот не разбирается', { raw: '{{{' });
+    if (loadFails) throw storageError('unreadable', 'снапшот не разбирается', { raw: '{{{' });
     return stored;
   });
   const saveAll: Mock = vi.fn(async (): Promise<void> => {
@@ -105,6 +105,19 @@ const mountStore = async (fakes: Fakes): Promise<Rendered> => {
 };
 
 const titles = (tasks: Task[]): string[] => tasks.map((task) => task.title);
+
+/** Снапшот, который получил `saveAll` на указанном вызове (`-1` — последний). */
+const snapshotAt = (saveAll: Mock, index: number): Task[] => {
+  const call: unknown[] | undefined = saveAll.mock.calls.at(index);
+  if (call === undefined) throw new Error('saveAll не вызывался');
+  return call[0] as Task[];
+};
+
+const onlyTask = (tasks: Task[]): Task => {
+  const task: Task | undefined = tasks.at(0);
+  if (task === undefined) throw new Error('в снапшоте нет задач');
+  return task;
+};
 
 const addTask = async (store: Rendered, title: string): Promise<Task> => {
   await act(async () => {
@@ -166,7 +179,7 @@ describe('персист', () => {
     await addTask(store, 'написать спеку');
 
     expect(fakes.saveAll).toHaveBeenCalledTimes(1);
-    expect(titles(fakes.saveAll.mock.calls[0][0])).toEqual(['написать спеку']);
+    expect(titles(snapshotAt(fakes.saveAll, 0))).toEqual(['написать спеку']);
   });
 
   it('DELETE_IS_A_TOMBSTONE: удалённая задача уезжает в снапшот надгробием', async () => {
@@ -178,9 +191,9 @@ describe('персист', () => {
       store.current.actions.deleteTask(created.id);
     });
 
-    const written: Task[] = fakes.saveAll.mock.calls.at(-1)?.[0];
+    const written: Task[] = snapshotAt(fakes.saveAll, -1);
     expect(written).toHaveLength(1);
-    expect(written[0].deletedAt).not.toBeNull();
+    expect(onlyTask(written).deletedAt).not.toBeNull();
     expect(store.current.listInbox).toEqual([]);
   });
 
@@ -279,8 +292,8 @@ describe('куда встаёт задача', () => {
     const third: Task = await addToQ1(store, 'третья');
 
     await act(async () => {
-      const [head]: Task[] = store.current.q1;
-      store.current.actions.moveToZone(third.id, 'Q1', { before: null, after: head });
+      const head: Task | undefined = store.current.q1[0];
+      store.current.actions.moveToZone(third.id, 'Q1', { before: null, after: head ?? null });
     });
 
     expect(titles(store.current.q1)).toEqual(['третья', 'первая', 'вторая']);

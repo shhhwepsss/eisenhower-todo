@@ -13,7 +13,7 @@ export { AppStateProvider } from './AppStateProvider';
 export { useListGroup } from './hooks/use-list-group';
 export { useListSort } from './hooks/use-list-sort';
 export { useInboxTasks, useQuadrantTasks } from './hooks/use-matrix-tasks';
-export { useStorageStatus } from './hooks/use-storage-status';
+export { useStorageIsPersistent, useStorageStatus } from './hooks/use-storage-status';
 export { useTaskActions } from './hooks/use-task-actions';
 export type { ListSort } from './hooks/use-list-sort';
 export type { StorageStatus, TaskActions } from './types';

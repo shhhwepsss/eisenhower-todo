@@ -1,0 +1,12 @@
+@use '../../../styles/tokens' as *;
+
+.select {
+  justify-self: start;
+  padding: $space-xs $space-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}

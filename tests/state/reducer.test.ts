@@ -13,7 +13,7 @@ const NOW: string = '2026-01-01T10:00:00.000Z';
 const LATER: string = '2026-01-02T10:00:00.000Z';
 
 const emptyState = (): AppState => {
-  return { tasks: [], ui: DEFAULT_UI_SETTINGS, storage: 'ready' };
+  return { tasks: [], ui: DEFAULT_UI_SETTINGS, storage: 'ready', persistent: true };
 };
 
 const added = (id: string, title: string, now: string = NOW): Action => {

@@ -14,4 +14,5 @@ export const INITIAL_APP_STATE: AppState = {
   tasks: [],
   ui: DEFAULT_UI_SETTINGS,
   storage: 'ready',
+  persistent: true,
 };
