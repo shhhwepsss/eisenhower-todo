@@ -12,11 +12,12 @@ import type { AppStateProviderProps, Store } from './types';
 /**
  * Вход в слой состояния: стор, чтение снапшота и персист (спека §5).
  *
- * Чтение идёт в эффекте после первого рендера, поэтому первый кадр приложения —
- * пустая матрица. Это сознательное расхождение со спекой §3 («состояния
- * „загружаемся“ у приложения нет») ради простоты входа: отдельного экрана
- * загрузки не будет, а если мигание окажется заметным на реальных данных —
- * это отдельная задача с замером, а не спиннер «на всякий случай».
+ * Чтение идёт в эффекте после первого рендера. Пока оно не завершилось,
+ * `state.storage === 'loading'`: экран показывает загрузчик вместо вкладок
+ * с задачами (`ui/app/App.tsx`), а не пустую матрицу поверх непрочитанного
+ * снапшота. Поэтому действие, случившееся раньше ответа хранилища, попросту
+ * некому отправить — интерфейс задач не смонтирован, пока идёт загрузка,
+ * и записывать в хранилище нечего.
  *
  * Запись — эффект, а не часть редьюсера: редьюсер остаётся чистым и тестируется
  * без моков, а хранилище получает уже применённое состояние.
@@ -35,12 +36,6 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
   const savedTasks: RefObject<readonly Task[]> = useRef<readonly Task[]>(INITIAL_APP_STATE.tasks);
   const savedSettings: RefObject<UiSettings> = useRef<UiSettings>(INITIAL_APP_STATE.ui);
 
-  /**
-   * До первого чтения не пишем ничего: иначе действие, случившееся раньше ответа
-   * хранилища, записало бы пустой снапшот поверх непрочитанного.
-   */
-  const isLoaded: RefObject<boolean> = useRef<boolean>(false);
-
   useEffect(() => {
     let cancelled: boolean = false;
 
@@ -51,7 +46,6 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
         if (cancelled) return;
         savedTasks.current = tasks;
         savedSettings.current = ui;
-        isLoaded.current = true;
         dispatch({ type: 'snapshot/loaded', tasks, ui });
       } catch (error) {
         if (cancelled) return;
@@ -60,7 +54,6 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
          * нельзя. Первая же запись затёрла бы строку, из которой данные ещё можно
          * достать руками. Персист выключается до конца сессии.
          */
-        isLoaded.current = true;
         log.error('снапшот не прочитан — запись выключена', describeError(error));
         dispatch({ type: 'storage/failed' });
       }
@@ -74,8 +67,7 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
   }, [repositories]);
 
   useEffect(() => {
-    if (!isLoaded.current) return;
-    if (state.storage === 'error') return;
+    if (state.storage !== 'ready') return;
     if (state.tasks === savedTasks.current) return;
 
     const tasks: readonly Task[] = state.tasks;
@@ -93,8 +85,7 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
   }, [repositories, state.tasks, state.storage]);
 
   useEffect(() => {
-    if (!isLoaded.current) return;
-    if (state.storage === 'error') return;
+    if (state.storage !== 'ready') return;
     if (state.ui === savedSettings.current) return;
 
     const settings: UiSettings = state.ui;

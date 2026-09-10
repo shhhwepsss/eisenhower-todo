@@ -19,3 +19,9 @@ export const useStorageIsPersistent = (): boolean => {
   const { state }: Store = useStore();
   return state.persistent;
 };
+
+/** Снапшот ещё не прочитан — экран показывает загрузчик вместо вкладок с задачами. */
+export const useIsLoading = (): boolean => {
+  const { state }: Store = useStore();
+  return state.storage === 'loading';
+};

@@ -1,5 +1,6 @@
 import { DEFAULT_UI_SETTINGS, resolveZone } from '@/domain';
 import type { Task, Zone } from '@/domain';
+import { INITIAL_APP_STATE } from '@/state/constants';
 import { reducer } from '@/state/reducer';
 import type { Action, AppState } from '@/state/types';
 
@@ -245,5 +246,31 @@ describe('действие про неизвестную задачу', () => {
     const after: AppState = reducer(before, { type: 'task/deleted', id: 'task-404', now: LATER });
 
     expect(after).toBe(before);
+  });
+});
+
+describe('storage: loading → ready/error', () => {
+  it('INITIAL_APP_STATE стартует с loading — до чтения снапшота писать нельзя', () => {
+    expect(INITIAL_APP_STATE.storage).toBe('loading');
+  });
+
+  it('snapshot/loaded переводит storage из loading в ready', () => {
+    const loading: AppState = { ...INITIAL_APP_STATE };
+
+    const after: AppState = reducer(loading, {
+      type: 'snapshot/loaded',
+      tasks: [],
+      ui: DEFAULT_UI_SETTINGS,
+    });
+
+    expect(after.storage).toBe('ready');
+  });
+
+  it('storage/failed из loading переводит storage сразу в error', () => {
+    const loading: AppState = { ...INITIAL_APP_STATE };
+
+    const after: AppState = reducer(loading, { type: 'storage/failed' });
+
+    expect(after.storage).toBe('error');
   });
 });

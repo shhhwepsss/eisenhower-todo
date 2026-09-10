@@ -171,6 +171,39 @@ describe('старт приложения', () => {
   });
 });
 
+describe('storage: loading', () => {
+  it('пока снапшот не прочитан, storage === loading и запись не идёт', async () => {
+    let resolveLoad: (tasks: Task[]) => void = () => {};
+    const loadAll: Mock = vi.fn(() => {
+      return new Promise<Task[]>((resolve) => {
+        resolveLoad = resolve;
+      });
+    });
+    const saveAll: Mock = vi.fn(async (): Promise<void> => {});
+    const repositories: Repositories = {
+      tasks: { loadAll, saveAll },
+      settings: { load: async () => ({ listSort: 'created' }), save: vi.fn(async () => {}) },
+      persistent: true,
+    };
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AppStateProvider repositories={repositories}>{children}</AppStateProvider>
+    );
+    const { result } = renderHook(useHarness, { wrapper });
+
+    expect(result.current.storage).toBe('loading');
+    expect(saveAll).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveLoad([]);
+      await Promise.resolve();
+    });
+
+    expect(result.current.storage).toBe('ready');
+    expect(saveAll).not.toHaveBeenCalled();
+  });
+});
+
 describe('персист', () => {
   it('после действия saveAll получает весь снапшот ровно один раз', async () => {
     const fakes: Fakes = createFakes();

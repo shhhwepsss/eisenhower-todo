@@ -69,7 +69,8 @@ export const renderWithStore = async (
     <AppStateProvider repositories={storage.repositories}>{ui}</AppStateProvider>,
   );
 
-  // Снапшот читается в эффекте: без этого первый кадр — пустая матрица (спека §5).
+  // Снапшот читается в эффекте: без этого ожидания снаружи виден загрузчик
+  // (storage === 'loading'), а не смонтированные вкладки (спека §5).
   await act(async () => {});
   return Object.assign(rendered, { storage });
 };

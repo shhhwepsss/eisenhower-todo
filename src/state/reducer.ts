@@ -93,7 +93,7 @@ export const reducer = (state: AppState, action: Action): AppState => {
       return applyToTask(state, action.id, (task) => deleteTask(task, action.now));
     case 'snapshot/loaded': {
       log.info('снапшот прочитан', { count: action.tasks.length, listSort: action.ui.listSort });
-      return { ...state, tasks: action.tasks, ui: action.ui };
+      return { ...state, tasks: action.tasks, ui: action.ui, storage: 'ready' };
     }
     case 'storage/failed': {
       if (state.storage === 'error') return state;
