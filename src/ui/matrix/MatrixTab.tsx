@@ -1,5 +1,6 @@
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCorners,
@@ -12,18 +13,22 @@ import type {
   Collision,
   CollisionDetection,
   DragEndEvent,
+  DragStartEvent,
   SensorDescriptor,
   SensorOptions,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { useState } from 'react';
 import { QUADRANTS } from '@/domain';
+import type { Task } from '@/domain';
 import { useBodyDragging } from '@/shared/hooks/use-body-dragging';
 import type { BodyDragging } from '@/shared/hooks/use-body-dragging';
 import { useMatrixZones, useTaskActions } from '@/state';
 import type { MatrixZones, TaskActions } from '@/state';
+import { DragPreview } from './children/DragPreview';
 import { MatrixZone } from './children/MatrixZone';
 import { INBOX_META, QUADRANT_META } from './constants';
-import { resolveDrop } from './helpers';
+import { findDraggedTask, resolveDrop } from './helpers';
 import type { DropTarget } from './helpers';
 import styles from './MatrixTab.module.scss';
 
@@ -67,31 +72,49 @@ const collisionDetection: CollisionDetection = (args) => {
  * Список квадрантов берётся из домена, а не выписывается здесь: порядок Q1..Q4
  * задан одной таблицей на весь проект.
  *
- * Порог в 4 пикселя нужен, чтобы жест не съедал клики: на карточке живут
- * переключатели разбора, и они должны продолжать работать. Клавиатурный сенсор
- * стоит рядом с мышью, потому что перетаскивание — единственный способ вернуть
- * задачу во «Входящие» (спека §12), и оставлять его только для мыши нельзя.
+ * Порог в 4 пикселя нужен, чтобы жест не съедал клики: карточка тянется целиком
+ * (issue #38), и нажатие по её фону или заголовку должно оставаться нажатием,
+ * пока указатель стоит на месте. Сами контролы разбора отсеиваются раньше порога —
+ * в `SortableCard`, потому что решение «это не жест» принимается по элементу,
+ * а не по расстоянию.
+ *
+ * Клавиатурный сенсор стоит рядом с мышью, потому что перетаскивание —
+ * единственный способ вернуть задачу во «Входящие» (спека §12), и оставлять
+ * его только для мыши нельзя.
  */
 export const MatrixTab = () => {
   const zones: MatrixZones = useMatrixZones();
   const { moveToZone }: TaskActions = useTaskActions();
   const { startDragging, stopDragging }: BodyDragging = useBodyDragging();
 
+  /**
+   * Кого тянут — нужно самому экрану, а не только `@dnd-kit`: по этому
+   * идентификатору собирается копия карточки в `DragOverlay`. Хранится `id`,
+   * а не задача: пока жест идёт, задачу могут изменить переключателями в другой
+   * вкладке, и копия обязана показывать текущую версию, а не снимок на момент
+   * захвата.
+   */
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const draggedTask: Task | null = findDraggedTask(zones, draggedId);
+
   const sensors: SensorDescriptor<SensorOptions>[] = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const onDragStart = (): void => {
+  const onDragStart = (event: DragStartEvent): void => {
     startDragging();
+    setDraggedId(String(event.active.id));
   };
 
   const onDragCancel = (): void => {
     stopDragging();
+    setDraggedId(null);
   };
 
   const onDragEnd = (event: DragEndEvent): void => {
     stopDragging();
+    setDraggedId(null);
 
     const { active, over } = event;
     if (over === null) return;
@@ -129,6 +152,8 @@ export const MatrixTab = () => {
             ))}
           </div>
         </div>
+
+        <DragOverlay>{draggedTask === null ? null : <DragPreview task={draggedTask} />}</DragOverlay>
       </DndContext>
     </section>
   );
