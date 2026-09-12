@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Знак приложения: четыре квадранта матрицы. Тот же рисунок, что у метки
+    в оболочке интерфейса.
+
+    Цвета не берутся из токенов: у файла иконки нет доступа к CSS проекта,
+    а медиазапрос внутри SVG — единственный способ не утонуть ни в светлой,
+    ни в тёмной панели вкладок браузера.
+  -->
+  <style>
+    .plate { fill: #1a1917; }
+    .grid { stroke: #fbfaf8; }
+
+    @media (prefers-color-scheme: dark) {
+      .plate { fill: #f2f0ea; }
+      .grid { stroke: #141413; }
+    }
+  </style>
+  <rect class="plate" x="0" y="0" width="32" height="32" rx="9" />
+  <g class="grid" fill="none" stroke-width="2" transform="translate(6.5 6.5) scale(0.79)">
+    <path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z" />
+  </g>
+</svg>

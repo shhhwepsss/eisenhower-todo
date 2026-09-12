@@ -1,12 +1,7 @@
 @use '../../shared/styles/panel' as *;
 @use '../../styles/tokens' as *;
 
-// $measure ограничивает длину строки в колонке списка, а не ширину приложения
-// целиком (docs/specs/35-design-system.md §2) — единственное место, где токен
-// применяется.
 .panel {
-  max-width: $measure;
-
   @include panel;
 }
 
@@ -15,10 +10,9 @@
   align-items: center;
   gap: $space-4;
   flex-wrap: wrap;
-  margin-bottom: $space-6;
 }
 
 .groups {
   display: grid;
-  gap: $space-6;
+  gap: $space-4;
 }

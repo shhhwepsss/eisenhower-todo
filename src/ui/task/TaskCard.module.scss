@@ -3,19 +3,40 @@
 
 .card {
   display: grid;
-  gap: $space-1;
-  padding: $space-2;
+  gap: $space-2;
+  padding: $space-2 $space-3;
   border: 1px solid var(--color-border);
   border-left: $stripe-width solid var(--zone-line);
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
   background: var(--color-surface-raised);
+  box-shadow: var(--shadow-raised);
 
   @include zone-vars;
 }
 
+.head {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+// Цвет текста задаётся явно, а не наследуется: `zone-vars` красит карточку
+// в `--zone-text`, и заголовок уезжал в цвет зоны на белой поверхности. Пара
+// «текст зоны на заливке зоны» проверена тестом CONTRAST_AA, «текст зоны на
+// поверхности карточки» — нет, и проверять её незачем: карточка уже лежит
+// внутри своего квадранта, цвет зоны несут полоса слева и само поле.
 .title {
   margin: 0;
+  min-width: 0;
+  color: var(--color-text-primary);
   overflow-wrap: anywhere;
 
   @include text-body;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  flex-wrap: wrap;
 }

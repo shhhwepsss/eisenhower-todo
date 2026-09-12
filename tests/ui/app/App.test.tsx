@@ -1,6 +1,7 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { createTask } from '@/domain';
 import type { Task, UiSettings } from '@/domain';
 import { AppStateProvider } from '@/state';
 import type { Repositories } from '@/storage';
@@ -166,5 +167,49 @@ describe('AppLoader', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Хранилище недоступно');
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
+  });
+});
+
+/**
+ * Счётчики пунктов меню (docs/specs/35-design-system.md, часть 2, критерии
+ * приёмки): у «Списка» — все живые задачи, у «Матрицы» — те, что в матрице
+ * видны. Выполненная задача остаётся в списке (LIST_IS_COMPLETE) и уходит
+ * из матрицы (DONE_LEAVES_MATRIX), поэтому числа расходятся.
+ *
+ * Число ищется текстом, а не ролью: в имени вкладки его нет намеренно
+ * (`aria-hidden`), иначе имя вкладки зависело бы от данных.
+ */
+describe('счётчики вкладок в меню', () => {
+  const stored: Task[] = [
+    createTask({ id: 'a', title: 'неразобранная', now: '2026-01-01T10:00:00.000Z' }),
+    {
+      ...createTask({ id: 'b', title: 'разобранная', now: '2026-01-01T10:00:00.000Z' }),
+      assigned: true,
+      urgent: true,
+      important: true,
+    },
+    {
+      ...createTask({ id: 'c', title: 'сделанная', now: '2026-01-01T10:00:00.000Z' }),
+      status: 'done',
+    },
+  ];
+
+  it('«Список» считает все живые задачи, «Матрица» — только видимые в матрице', async () => {
+    await renderWithStore(<App />, { stored });
+
+    const list: HTMLElement = screen.getByRole('tab', { name: 'Список' });
+    const matrix: HTMLElement = screen.getByRole('tab', { name: 'Матрица' });
+
+    expect(within(list).getByText('3')).toBeInTheDocument();
+    expect(within(matrix).getByText('2')).toBeInTheDocument();
+  });
+
+  it('удалённая задача уходит из обоих счётчиков', async () => {
+    await renderWithStore(<App />, { stored });
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0] as HTMLElement);
+
+    const list: HTMLElement = screen.getByRole('tab', { name: 'Список' });
+    expect(within(list).getByText('2')).toBeInTheDocument();
   });
 });

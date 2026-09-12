@@ -1,19 +1,33 @@
 @use '../../../styles/tokens' as *;
 
+// Группа — «колодец», а не лист: её поверхность утоплена, а строки лежат
+// на приподнятой (см. TaskRow). Обратный порядок — строки на том же листе,
+// что и карточка, — и давал сплошное полотно, в котором строки различались
+// одной линией.
 .group {
-  display: grid;
-  gap: $space-2;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-lg;
+  background: var(--color-surface-sunken);
+  overflow: hidden;
 }
 
+// Подсказка стоит ПОД заголовком, а не на его правом краю: на широком экране
+// прижатая вправо строка отрывается от того, что поясняет, и глаз проходит
+// всю ширину карточки ради трёх слов.
 .header {
   display: grid;
   gap: $space-05;
+  padding: $space-3 $space-4;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
 }
 
 .title {
-  display: flex;
-  align-items: baseline;
-  gap: $space-2;
   margin: 0;
 
   @include text-title;
@@ -21,6 +35,9 @@
 }
 
 .count {
+  padding: $space-05 $space-2;
+  border-radius: $radius-pill;
+  background: var(--color-surface-inset);
   color: var(--color-text-secondary);
 
   @include text-caption;
@@ -29,22 +46,27 @@
 
 .hint {
   margin: 0;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 
   @include text-caption;
 }
 
+// Строки лежат отдельными плитками на поверхности карточки: одной линии между
+// ними мало — у строки своя высота, свои контролы, и на широком экране соседние
+// строки сливались в сплошное полотно. Зазор и собственная поверхность строки
+// (см. TaskRow) дают границу, которую видно, не добавляя ни одной новой линии.
 .list {
   display: grid;
   gap: $space-2;
   margin: 0;
-  padding: 0;
+  padding: $space-2;
   list-style: none;
 }
 
 .empty {
   margin: 0;
-  color: var(--color-text-secondary);
+  padding: $space-3 $space-4;
+  color: var(--color-text-muted);
 
   @include text-small;
 }

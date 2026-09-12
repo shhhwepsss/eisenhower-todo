@@ -1,10 +1,8 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
 .item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: start;
-  gap: $space-1;
+  display: block;
 }
 
 .dragging {
@@ -12,13 +10,17 @@
 }
 
 .handle {
-  padding: $space-1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: $space-05;
   border: none;
-  border-radius: $radius-md;
+  border-radius: $radius-sm;
   background: none;
-  font: inherit;
   color: var(--color-text-muted);
   line-height: 1;
 
   @include draggable;
+  @include tap-target-on-narrow;
 }

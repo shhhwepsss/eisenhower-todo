@@ -1,16 +1,22 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
+// Кнопка-значок: в компактной строке подпись «Удалить» заняла бы место
+// переключателя, а имя у кнопки остаётся — оно в `aria-label`.
 .button {
-  margin-left: auto;
-  min-height: $control-height;
-  padding: $space-1 $space-2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $control-height;
+  height: $control-height;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: $radius-md;
   background: none;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 
-  @include text-small;
   @include interactive;
+  @include tap-target-on-narrow;
 
   &:hover,
   &:focus-visible {

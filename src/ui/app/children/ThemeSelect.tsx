@@ -9,13 +9,19 @@ import styles from './ThemeSelect.module.scss';
  * `select` к `ThemeKey` безопасно тем же способом, что и в `ListSortSelect`:
  * варианты собраны из той же таблицы `THEME_LABELS`, других значений в
  * разметке нет.
+ *
+ * Живёт в подвале меню (часть 2). Подпись обёрнута в `span`, потому что на
+ * узком экране меню становится полосой навигации и подпись уходит с экрана —
+ * не `display: none`, а уводом за пределы видимой области (см. модуль стилей):
+ * скрытая первым способом подпись перестаёт называть `select`, и контрол
+ * остаётся безымянным.
  */
 export const ThemeSelect = () => {
   const { theme, selectTheme }: Theme = useTheme();
 
   return (
     <label className={styles.control}>
-      Тема
+      <span className={styles.label}>Тема</span>
       <select
         className={styles.select}
         value={theme}

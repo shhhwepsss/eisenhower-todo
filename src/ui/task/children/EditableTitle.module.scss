@@ -1,3 +1,4 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
 .title {
@@ -11,6 +12,7 @@
 
   @include text-body;
   @include editable;
+  @include tap-target-on-narrow;
 
   &:hover,
   &:focus {

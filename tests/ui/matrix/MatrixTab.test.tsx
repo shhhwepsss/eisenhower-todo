@@ -28,8 +28,13 @@ const cardTitles = (name: string): string[] => {
 
 const card = (title: string): HTMLElement => screen.getByRole('article', { name: title });
 
+/**
+ * Переключатели признаков — кнопки с `aria-pressed`, а не флажки
+ * (docs/specs/35-design-system.md, часть 2): включённое состояние читается
+ * голосом, а не только инверсной заливкой (COLOR_NOT_ALONE).
+ */
 const toggle = async (title: string, flag: string): Promise<void> => {
-  await userEvent.click(within(card(title)).getByRole('checkbox', { name: flag }));
+  await userEvent.click(within(card(title)).getByRole('button', { name: flag }));
 };
 
 describe('зона «Входящие»', () => {
@@ -108,5 +113,32 @@ describe('DONE_LEAVES_MATRIX', () => {
     });
 
     expect(cardTitles('Входящие')).toEqual([]);
+  });
+});
+
+/**
+ * Ручка перетаскивания живёт внутри карточки, слева от заголовка
+ * (docs/specs/35-design-system.md, часть 2, критерии приёмки). Жест висит
+ * на ней, а не на карточке целиком: на карточке живут переключатели разбора.
+ */
+describe('ручка перетаскивания', () => {
+  it('у карточки есть своя ручка, и она названа задачей', async () => {
+    await renderWithStore(<MatrixTab />, { stored: [task('написать спеку', OLD)] });
+
+    const handle: HTMLElement = within(card('написать спеку')).getByRole('button', {
+      name: 'Перетащить «написать спеку»',
+    });
+
+    expect(handle).toBeInTheDocument();
+  });
+
+  it('переключатели разбора остаются отдельными кнопками, а не частью ручки', async () => {
+    await renderWithStore(<MatrixTab />, { stored: [task('написать спеку', OLD)] });
+
+    const buttons: HTMLElement[] = within(card('написать спеку')).getAllByRole('button');
+
+    expect(buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(
+      ['Перетащить «написать спеку»', 'Срочная', 'Важная'],
+    );
   });
 });

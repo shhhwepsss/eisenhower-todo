@@ -1,10 +1,12 @@
 @use '../../styles/tokens' as *;
 
 // Панель вкладки: общая раскладка для «Списка» и «Матрицы».
+// Внешние поля панель больше не задаёт — их держит контентная колонка оболочки
+// («Панель», часть 2): иначе отступ экрана складывался бы из двух слагаемых
+// в двух файлах.
 @mixin panel {
-  padding: $space-8 0;
-}
-
-@mixin panel-placeholder {
-  color: var(--color-text-secondary);
+  display: grid;
+  align-content: start;
+  gap: $space-4;
+  min-width: 0;
 }

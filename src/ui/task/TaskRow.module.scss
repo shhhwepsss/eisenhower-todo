@@ -1,27 +1,138 @@
 @use '../../shared/styles/zone' as *;
 @use '../../styles/tokens' as *;
 
+// Строка — приподнятая плитка на утопленной поверхности группы: рамка одна
+// строку от другой не отделяла, и на широком экране список читался сплошным
+// полотном (правка после визуальной проверки).
 .row {
-  display: grid;
-  gap: $space-1;
-  padding: $space-2 $space-4;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
   border: 1px solid var(--color-border);
-  border-left: $stripe-width solid var(--zone-line);
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-raised);
 
   @include zone-vars;
 }
 
-.zoneLabel {
+// Выполненная задача гаснет: она остаётся в инвентаре (LIST_IS_COMPLETE), но
+// перестаёт соперничать за внимание с тем, что ещё предстоит сделать. Гасится
+// колонка с текстом, а не строка целиком: плашка зоны продолжает отвечать на
+// вопрос «откуда это уехало», и контраст у неё свой.
+.row[data-status='done'] .body {
+  color: var(--color-text-secondary);
+}
+
+// Плашка зоны вместо полосы слева (часть 2): заливка и текст зоны — та же пара,
+// что проверена на контраст (CONTRAST_AA), плюс подпись внутри.
+// Ширину держит колонка, а не сама плашка: заливка по длине подписи, но левый
+// край заголовков не пляшет от строки к строке вслед за длиной названия зоны.
+.zoneCell {
+  order: 0;
+  flex: none;
+  width: $zone-badge-width;
+}
+
+.zone {
+  display: inline-flex;
+  padding: $space-05 $space-2;
+  border-radius: $radius-md;
+  background: var(--zone-bg);
   color: var(--zone-text);
+  white-space: nowrap;
 
   @include text-caption;
   @include inert;
 }
 
+// $measure ограничивает не ширину экрана, а длину строки текста
+// (docs/specs/35-design-system.md §2), поэтому едет на колонку с заголовком
+// и заметкой, а не на панель целиком: контролы справа от неё стоят на месте.
+.body {
+  order: 1;
+  flex: 1;
+  min-width: 0;
+  max-width: $measure;
+}
+
+// Статус стоит отдельно от остальных контролов: на узком экране те уезжают
+// в раскрытие, а он остаётся в свёрнутой строке.
+.status {
+  order: 2;
+  flex: none;
+}
+
 .controls {
   display: flex;
   align-items: center;
-  gap: $space-4;
-  flex-wrap: wrap;
+  gap: $space-2;
+  order: 3;
+  flex: none;
+}
+
+// Кнопка раскрытия нужна только узкому экрану: на широком контролы и так видны,
+// и `display: none` убирает её заодно из дерева доступности.
+.expand {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: $tap-target;
+  height: $tap-target;
+  padding: 0;
+  border: none;
+  border-radius: $radius-md;
+  background: none;
+  color: var(--color-text-muted);
+
+  @include interactive;
+}
+
+// Узкий экран (часть 2): контролы уезжают в раскрытие по тапу, строка сжимается
+// до плашки, заголовка, статуса и кнопки раскрытия. Порядок задаёт `order`,
+// а не вторая разметка: строка одна, и разъехаться двум её версиям было бы нечем.
+@media (width <= #{$breakpoint-narrow}) {
+  .row {
+    flex-wrap: wrap;
+    gap: $space-2;
+    min-height: $tap-target;
+  }
+
+  .zoneCell,
+  .status {
+    order: 1;
+  }
+
+  .zoneCell {
+    width: auto;
+  }
+
+  .expand {
+    display: inline-flex;
+    order: 1;
+    margin-left: auto;
+  }
+
+  .body {
+    order: 2;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .controls {
+    display: none;
+    order: 3;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .row[data-expanded='true'] .controls {
+    display: flex;
+  }
+
+  .expand[aria-expanded='true'] {
+    transform: rotate(180deg);
+  }
 }

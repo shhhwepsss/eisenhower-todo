@@ -1,0 +1,123 @@
+@use '../../../styles/tokens' as *;
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  padding: $space-4 $space-3;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 0 $space-2;
+}
+
+// Знак — инверсия: заливка основным текстом, контур поверхностью страницы.
+// Пара уже проверена на контраст (CONTRAST_AA), и новых цветов не заводится.
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $mark-size;
+  height: $mark-size;
+  border-radius: $radius-md;
+  background: var(--color-text-primary);
+  color: var(--color-surface-page);
+}
+
+.brandName {
+  @include text-title;
+  @include inert;
+}
+
+.nav {
+  display: grid;
+  gap: $space-1;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: $tap-target;
+  padding: 0 $space-2;
+  border: none;
+  border-radius: $radius-md;
+  background: none;
+  color: var(--color-text-secondary);
+  text-align: left;
+
+  @include text-body;
+  @include interactive;
+}
+
+.tabActive {
+  background: var(--color-surface-inset);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.tabLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.tabCount {
+  color: var(--color-text-muted);
+
+  @include text-caption;
+}
+
+.foot {
+  margin-top: auto;
+}
+
+// Узкий экран: меню целиком превращается в нижнюю навигацию и фиксируется
+// у края экрана — она видна без прокрутки при любой длине списка
+// (NAV_ALWAYS_REACHABLE). Бренд уходит: место в полосе стоит дороже, чем
+// повторное название приложения. Переключатель темы остаётся — иначе на
+// телефоне тему не сменить вовсе.
+@media (width <= #{$breakpoint-narrow}) {
+  .menu {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    flex-direction: row;
+    align-items: center;
+    gap: $space-2;
+    min-height: $nav-height;
+    padding: $space-2 $space-2 calc(#{$space-2} + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    border-right: none;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .nav {
+    flex: 1;
+    min-width: 0;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+
+  .tab {
+    justify-content: center;
+  }
+
+  .tabLabel {
+    flex: none;
+  }
+
+  .foot {
+    flex: none;
+    margin-top: 0;
+  }
+}
