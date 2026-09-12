@@ -1,0 +1,17 @@
+@use '../../styles/tokens' as *;
+
+.card {
+  display: grid;
+  gap: $space-xs;
+  padding: $space-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-surface;
+}
+
+.title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

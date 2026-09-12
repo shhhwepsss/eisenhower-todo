@@ -1,0 +1,15 @@
+@use '../../../styles/tokens' as *;
+
+.toggles {
+  display: flex;
+  gap: $space-md;
+  color: $color-muted;
+  font-size: 0.8125rem;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+  cursor: pointer;
+}

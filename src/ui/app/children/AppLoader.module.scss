@@ -1,0 +1,32 @@
+@use '../../../styles/tokens' as *;
+
+// Задержанное появление — чтобы быстрое чтение снапшота не мигнуло загрузчиком
+// (см. JSDoc в AppLoader.tsx). Стартуем с opacity: 0 и держим его до конца
+// задержки — animation-fill-mode: forwards, иначе браузер откатит стиль
+// к исходному значению до старта анимации.
+.loader {
+  margin: 0;
+  padding: $space-sm $space-md;
+  color: $color-muted;
+  opacity: 0;
+  animation: fade-in 150ms ease-in forwards;
+  animation-delay: 200ms;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+// Тем, кто просил меньше анимации, — без плавности, но с той же задержкой:
+// без неё быстрое чтение снова мигало бы загрузчиком.
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    animation-duration: 1ms;
+  }
+}

@@ -1,9 +1,30 @@
 @use '../../shared/styles/panel' as *;
+@use '../../styles/tokens' as *;
 
 .panel {
   @include panel;
 }
 
-.placeholder {
-  @include panel-placeholder;
+// «Входящие» — узкая колонка слева, квадранты — сетка 2x2 справа.
+// На узком экране колонки складываются, но матрица не разваливается (PRD §7).
+.board {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) 1fr;
+  gap: $space-md;
+}
+
+.quadrants {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-md;
+}
+
+@media (max-width: 60rem) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+
+  .quadrants {
+    grid-template-columns: 1fr;
+  }
 }

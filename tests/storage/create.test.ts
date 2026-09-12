@@ -1,8 +1,7 @@
-import type { MockInstance } from 'vitest';
-
-import type { Task } from '@/domain';
 import { createRepositories } from '@/storage';
-import type { Repositories } from '@/storage';
+import { isStorageError } from '@/storage/errors';
+import type { Repositories, StorageError } from '@/storage';
+import type { Task } from '@/domain';
 
 const TASK: Task = {
   id: 'task-1',
@@ -18,8 +17,15 @@ const TASK: Task = {
   deletedAt: null,
 };
 
-/** Пробу видно только по вызову: она обязана уйти из хранилища сразу же. */
-const PROBE_KEY: string = 'eisenhower-todo:probe';
+const rejectionOf = async (attempt: Promise<unknown>): Promise<StorageError> => {
+  try {
+    await attempt;
+  } catch (error) {
+    if (isStorageError(error)) return error;
+    throw error;
+  }
+  throw new Error('порт не отказал там, где должен был');
+};
 
 afterEach(() => {
   localStorage.clear();
@@ -27,16 +33,6 @@ afterEach(() => {
 });
 
 describe('createRepositories с работающим localStorage', () => {
-  it('отдаёт постоянное хранилище', () => {
-    expect(createRepositories().persistent).toBe(true);
-  });
-
-  it('не оставляет за собой ключ пробы', () => {
-    createRepositories();
-
-    expect(localStorage.getItem(PROBE_KEY)).toBeNull();
-  });
-
   it('записанное переживает пересоздание репозиториев', async () => {
     await createRepositories().tasks.saveAll([TASK]);
 
@@ -46,22 +42,26 @@ describe('createRepositories с работающим localStorage', () => {
   });
 });
 
+/**
+ * Запасного хранилища в памяти больше нет (решение ревью): недоступный
+ * `localStorage` — это отказ порта, а не тихая подмена реализации. Обращение
+ * к `window.localStorage` ленивое (src/storage/create.ts), поэтому и в
+ * приватном режиме, и при бросающемся геттере ошибка проявляется там же,
+ * где обычно, — на `loadAll`/`saveAll`, а не при создании репозиториев.
+ */
 describe('createRepositories без localStorage', () => {
-  it('переходит в память, когда запись запрещена: приватный режим', async () => {
-    const warn: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('запись запрещена (приватный режим): порт отказывает, данные не хранятся', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('denied', 'QuotaExceededError');
     });
 
     const repositories: Repositories = createRepositories();
 
-    expect(repositories.persistent).toBe(false);
-    expect(warn).toHaveBeenCalledOnce();
-    await expect(repositories.tasks.loadAll()).resolves.toStrictEqual([]);
+    const failure: StorageError = await rejectionOf(repositories.tasks.saveAll([TASK]));
+    expect(failure.kind).toBe('write-failed');
   });
 
-  it('переходит в память, когда бросает само обращение к localStorage', () => {
-    const warn: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('обращение к самому localStorage бросает: чтение отдаёт unavailable', async () => {
     const original: PropertyDescriptor | undefined = Object.getOwnPropertyDescriptor(
       window,
       'localStorage',
@@ -74,23 +74,11 @@ describe('createRepositories без localStorage', () => {
     });
 
     try {
-      expect(createRepositories().persistent).toBe(false);
-      expect(warn).toHaveBeenCalledOnce();
+      const repositories: Repositories = createRepositories();
+      const failure: StorageError = await rejectionOf(repositories.tasks.loadAll());
+      expect(failure.kind).toBe('unavailable');
     } finally {
       if (original) Object.defineProperty(window, 'localStorage', original);
     }
-  });
-
-  it('в памяти работает тот же адаптер: сохранить и прочитать обратно', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
-      throw new DOMException('denied', 'QuotaExceededError');
-    });
-    const repositories: Repositories = createRepositories();
-
-    await repositories.tasks.saveAll([TASK]);
-
-    await expect(repositories.tasks.loadAll()).resolves.toStrictEqual([TASK]);
-    expect(repositories.persistent).toBe(false);
   });
 });

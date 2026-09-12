@@ -1,9 +1,19 @@
 @use '../../shared/styles/panel' as *;
+@use '../../styles/tokens' as *;
 
 .panel {
   @include panel;
 }
 
-.placeholder {
-  @include panel-placeholder;
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  flex-wrap: wrap;
+  margin-bottom: $space-lg;
+}
+
+.groups {
+  display: grid;
+  gap: $space-lg;
 }
