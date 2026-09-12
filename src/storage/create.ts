@@ -1,43 +1,28 @@
-import { describeError } from '@/shared/errors';
-
 import { createLocalSettingsRepository, createLocalTaskRepository } from './local-storage';
-import { log } from './log';
-import { createMemoryStorage } from './memory';
 import type { KeyValueStorage, Repositories } from './types';
 
 /**
  * Вход в слой хранения: единственное место во всём приложении, где берётся
  * глобальный `localStorage` (docs/specs/4-architecture.md §4).
+ *
+ * Обращение ленивое: сам `window.localStorage` не читается здесь и не пробуется
+ * заранее. Если он недоступен — это выяснится на первом же `getItem`/`setItem`
+ * внутри `read`/`write` (src/storage/local-storage.ts), и наружу уйдёт
+ * `StorageError` с видом `unavailable`. Решение владельца продукта: запасного
+ * хранилища в памяти больше нет — недоступный `localStorage` это отказ
+ * (`storage: 'unavailable'` в состоянии, см. `@/state`), а не тихий переход
+ * на данные, которые не переживут перезагрузку.
  */
-
-/** Ключ пробы удаляется сразу же: хранилище должно остаться таким, каким было. */
-const PROBE_KEY: string = 'eisenhower-todo:probe';
-
-/**
- * Наличие `localStorage` проверяется записью, а не `'localStorage' in window`.
- * В приватном режиме объект на месте и `getItem` работает, а `setItem` бросает —
- * то есть «хранилище есть» и «в хранилище можно писать» это разные вопросы,
- * и приложению нужен ответ на второй.
- */
-const resolveLocalStorage = (): KeyValueStorage | null => {
-  try {
-    const storage: Storage = window.localStorage;
-    storage.setItem(PROBE_KEY, '1');
-    storage.removeItem(PROBE_KEY);
-    return storage;
-  } catch (error) {
-    log.warn('localStorage недоступен, задачи не переживут перезагрузку', describeError(error));
-    return null;
-  }
+const windowStorage: KeyValueStorage = {
+  getItem: (key: string): string | null => window.localStorage.getItem(key),
+  setItem: (key: string, value: string): void => {
+    window.localStorage.setItem(key, value);
+  },
 };
 
 export const createRepositories = (): Repositories => {
-  const local: KeyValueStorage | null = resolveLocalStorage();
-  const storage: KeyValueStorage = local ?? createMemoryStorage();
-
   return {
-    tasks: createLocalTaskRepository(storage),
-    settings: createLocalSettingsRepository(storage),
-    persistent: local !== null,
+    tasks: createLocalTaskRepository(windowStorage),
+    settings: createLocalSettingsRepository(windowStorage),
   };
 };

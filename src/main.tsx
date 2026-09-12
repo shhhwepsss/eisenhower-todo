@@ -71,9 +71,6 @@ const root: Root = createRoot(container, {
  * слой состояния знает только порт, а подстановка происходит здесь, на входе.
  */
 const repositories: Repositories = createRepositories();
-if (!repositories.persistent) {
-  log.warn('постоянного хранилища нет: задачи не переживут перезагрузку вкладки');
-}
 
 root.render(
   <StrictMode>

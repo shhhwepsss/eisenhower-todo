@@ -60,7 +60,6 @@ const createFakes = (options: FakeOptions = {}): Fakes => {
   const repositories: Repositories = {
     tasks: { loadAll, saveAll },
     settings: { load: async () => ({ listSort: 'created' }), save: saveSettings },
-    persistent: true,
   };
 
   return { repositories, loadAll, saveAll, saveSettings };
@@ -183,7 +182,6 @@ describe('storage: loading', () => {
     const repositories: Repositories = {
       tasks: { loadAll, saveAll },
       settings: { load: async () => ({ listSort: 'created' }), save: vi.fn(async () => {}) },
-      persistent: true,
     };
 
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -234,14 +232,14 @@ describe('персист', () => {
     const fakes: Fakes = createFakes({ loadFails: true });
     const store: Rendered = await mountStore(fakes);
 
-    expect(store.current.storage).toBe('error');
+    expect(store.current.storage).toBe('unavailable');
 
     await act(async () => {
       store.current.actions.addTask('написать спеку');
     });
 
     expect(fakes.saveAll).not.toHaveBeenCalled();
-    expect(store.current.storage).toBe('error');
+    expect(store.current.storage).toBe('unavailable');
   });
 
   it('отказ записи виден пользователю, но состояние в памяти не откатывается', async () => {
@@ -253,8 +251,24 @@ describe('персист', () => {
     });
 
     expect(fakes.saveAll).toHaveBeenCalledTimes(1);
-    expect(store.current.storage).toBe('error');
+    expect(store.current.storage).toBe('write-failed');
     expect(titles(store.current.inbox)).toEqual(['написать спеку']);
+  });
+
+  it('после отказа записи персист выключен: дальнейшие правки не пишутся снова', async () => {
+    const fakes: Fakes = createFakes({ saveFails: true });
+    const store: Rendered = await mountStore(fakes);
+
+    const created: Task = await addTask(store, 'написать спеку');
+    expect(fakes.saveAll).toHaveBeenCalledTimes(1);
+    expect(store.current.storage).toBe('write-failed');
+
+    await act(async () => {
+      store.current.actions.setPriority(created.id, { assigned: true, urgent: true, important: true });
+    });
+
+    expect(fakes.saveAll).toHaveBeenCalledTimes(1);
+    expect(store.current.storage).toBe('write-failed');
   });
 });
 

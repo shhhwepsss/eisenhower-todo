@@ -19,7 +19,8 @@ export type FakeStorageOptions = {
   stored?: Task[];
   settings?: UiSettings;
   loadFails?: boolean;
-  persistent?: boolean;
+  /** Запись задач отказывает — квота, приватный режим (storage: 'write-failed'). */
+  saveFails?: boolean;
   /** Уже существующее хранилище — чтобы пережить перемонтирование приложения. */
   storage?: FakeStorage;
 };
@@ -29,7 +30,7 @@ export const createFakeStorage = (options: FakeStorageOptions = {}): FakeStorage
     stored = [],
     settings = { listSort: 'created' },
     loadFails = false,
-    persistent = true,
+    saveFails = false,
   } = options;
 
   const saved: Task[][] = [];
@@ -42,6 +43,7 @@ export const createFakeStorage = (options: FakeStorageOptions = {}): FakeStorage
         return stored;
       },
       saveAll: async (tasks: readonly Task[]): Promise<void> => {
+        if (saveFails) throw new Error('квота исчерпана');
         saved.push([...tasks]);
       },
     },
@@ -51,7 +53,6 @@ export const createFakeStorage = (options: FakeStorageOptions = {}): FakeStorage
         current = next;
       },
     },
-    persistent,
   };
 
   return { repositories, saved };

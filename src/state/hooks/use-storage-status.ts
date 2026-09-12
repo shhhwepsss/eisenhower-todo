@@ -10,16 +10,6 @@ export const useStorageStatus = (): StorageStatus => {
   return state.storage;
 };
 
-/**
- * Переживут ли задачи перезагрузку. Отдельный вопрос от отказа: писать удаётся,
- * но пишем в память — запасное хранилище (спека §3). Пользователю это нужно
- * сказать заранее, а не после потери.
- */
-export const useStorageIsPersistent = (): boolean => {
-  const { state }: Store = useStore();
-  return state.persistent;
-};
-
 /** Снапшот ещё не прочитан — экран показывает загрузчик вместо вкладок с задачами. */
 export const useIsLoading = (): boolean => {
   const { state }: Store = useStore();

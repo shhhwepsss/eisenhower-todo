@@ -23,10 +23,7 @@ import type { AppStateProviderProps, Store } from './types';
  * без моков, а хранилище получает уже применённое состояние.
  */
 export const AppStateProvider = ({ repositories, children }: AppStateProviderProps) => {
-  const [state, dispatch] = useReducer(reducer, {
-    ...INITIAL_APP_STATE,
-    persistent: repositories.persistent,
-  });
+  const [state, dispatch] = useReducer(reducer, INITIAL_APP_STATE);
 
   /**
    * Что уже лежит в хранилище. Персист сравнивает ссылки с этими двумя: снапшот,
@@ -55,7 +52,7 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
          * достать руками. Персист выключается до конца сессии.
          */
         log.error('снапшот не прочитан — запись выключена', describeError(error));
-        dispatch({ type: 'storage/failed' });
+        dispatch({ type: 'storage/load-failed' });
       }
     };
 
@@ -80,7 +77,7 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
      */
     void repositories.tasks.saveAll(tasks).catch((error: unknown) => {
       log.error('снапшот задач не записан', describeError(error));
-      dispatch({ type: 'storage/failed' });
+      dispatch({ type: 'storage/write-failed' });
     });
   }, [repositories, state.tasks, state.storage]);
 
@@ -93,7 +90,7 @@ export const AppStateProvider = ({ repositories, children }: AppStateProviderPro
 
     void repositories.settings.save(settings).catch((error: unknown) => {
       log.error('снапшот настроек не записан', describeError(error));
-      dispatch({ type: 'storage/failed' });
+      dispatch({ type: 'storage/write-failed' });
     });
   }, [repositories, state.ui, state.storage]);
 

@@ -14,7 +14,7 @@ const NOW: string = '2026-01-01T10:00:00.000Z';
 const LATER: string = '2026-01-02T10:00:00.000Z';
 
 const emptyState = (): AppState => {
-  return { tasks: [], ui: DEFAULT_UI_SETTINGS, storage: 'ready', persistent: true };
+  return { tasks: [], ui: DEFAULT_UI_SETTINGS, storage: 'ready' };
 };
 
 const added = (id: string, title: string, now: string = NOW): Action => {
@@ -249,7 +249,7 @@ describe('действие про неизвестную задачу', () => {
   });
 });
 
-describe('storage: loading → ready/error', () => {
+describe('storage: loading → ready/unavailable', () => {
   it('INITIAL_APP_STATE стартует с loading — до чтения снапшота писать нельзя', () => {
     expect(INITIAL_APP_STATE.storage).toBe('loading');
   });
@@ -266,11 +266,49 @@ describe('storage: loading → ready/error', () => {
     expect(after.storage).toBe('ready');
   });
 
-  it('storage/failed из loading переводит storage сразу в error', () => {
+  it('storage/load-failed из loading переводит storage сразу в unavailable', () => {
     const loading: AppState = { ...INITIAL_APP_STATE };
 
-    const after: AppState = reducer(loading, { type: 'storage/failed' });
+    const after: AppState = reducer(loading, { type: 'storage/load-failed' });
 
-    expect(after.storage).toBe('error');
+    expect(after.storage).toBe('unavailable');
+  });
+
+  it('повторный storage/load-failed — no-op: состояние уже unavailable', () => {
+    const loading: AppState = { ...INITIAL_APP_STATE };
+    const unavailable: AppState = reducer(loading, { type: 'storage/load-failed' });
+
+    const again: AppState = reducer(unavailable, { type: 'storage/load-failed' });
+
+    expect(again).toBe(unavailable);
+  });
+});
+
+describe('storage: ready → write-failed', () => {
+  it('storage/write-failed из ready переводит storage в write-failed, задачи остаются', () => {
+    const ready: AppState = stateWithTask('task-1');
+
+    const after: AppState = reducer(ready, { type: 'storage/write-failed' });
+
+    expect(after.storage).toBe('write-failed');
+    expect(after.tasks).toBe(ready.tasks);
+  });
+
+  it('повторный storage/write-failed — no-op: состояние уже write-failed', () => {
+    const ready: AppState = emptyState();
+    const failed: AppState = reducer(ready, { type: 'storage/write-failed' });
+
+    const again: AppState = reducer(failed, { type: 'storage/write-failed' });
+
+    expect(again).toBe(failed);
+  });
+
+  it('storage/write-failed после unavailable не откатывает обратно: unavailable сильнее', () => {
+    const loading: AppState = { ...INITIAL_APP_STATE };
+    const unavailable: AppState = reducer(loading, { type: 'storage/load-failed' });
+
+    const after: AppState = reducer(unavailable, { type: 'storage/write-failed' });
+
+    expect(after).toBe(unavailable);
   });
 });

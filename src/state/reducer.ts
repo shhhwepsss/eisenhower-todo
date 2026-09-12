@@ -23,8 +23,9 @@ import type { Action, AppState } from './types';
  * когда менять нечего. Значит «действие свернулось в no-op» видно только отсюда —
  * сравнением ссылки до и после, и логируется тоже отсюда.
  *
- * Действия хранилища (`snapshot/loaded`, `storage/failed`) чистоты не нарушают:
- * читает и пишет эффект в провайдере, сюда приезжает уже готовый результат.
+ * Действия хранилища (`snapshot/loaded`, `storage/load-failed`, `storage/write-failed`)
+ * чистоты не нарушают: читает и пишет эффект в провайдере, сюда приезжает уже
+ * готовый результат.
  */
 
 /** Мутация задачи в терминах домена: задача плюс намерение — новая задача. */
@@ -95,10 +96,15 @@ export const reducer = (state: AppState, action: Action): AppState => {
       log.info('снапшот прочитан', { count: action.tasks.length, listSort: action.ui.listSort });
       return { ...state, tasks: action.tasks, ui: action.ui, storage: 'ready' };
     }
-    case 'storage/failed': {
-      if (state.storage === 'error') return state;
-      log.warn('хранилище отказало: персист выключен до конца сессии');
-      return { ...state, storage: 'error' };
+    case 'storage/load-failed': {
+      if (state.storage === 'unavailable') return state;
+      log.warn('снапшот не прочитан: хранилище недоступно или повреждено');
+      return { ...state, storage: 'unavailable' };
+    }
+    case 'storage/write-failed': {
+      if (state.storage === 'unavailable' || state.storage === 'write-failed') return state;
+      log.warn('запись отказала: персист выключен до конца сессии');
+      return { ...state, storage: 'write-failed' };
     }
     case 'list-sort/selected': {
       if (state.ui.listSort === action.key) return state;

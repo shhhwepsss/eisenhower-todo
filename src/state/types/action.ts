@@ -14,8 +14,12 @@ import type { ListSortKey, Neighbours, Priority, Task, TaskStatus, UiSettings, Z
  * его в действии значило бы завести вторую копию правила. Соседей выбирает
  * создатель действия по текущему состоянию, `rankBetween` от них детерминирован.
  *
- * Три последних действия приходят не от пользователя, а от хранилища и от вида:
- * снапшот прочитан, хранилище отказало, выбрана сортировка списка.
+ * Последние четыре действия приходят не от пользователя, а от хранилища и от
+ * вида: снапшот прочитан, чтение отказало, запись отказала, выбрана сортировка
+ * списка. Отказ чтения и отказ записи — разные действия, а не один с флагом:
+ * это разные беды с разным ответом экрана (см. `StorageStatus`), и различать
+ * их сравнением строк в компоненте было бы дублированием того, что уже
+ * известно в момент диспатча.
  */
 export type Action =
   | { type: 'task/added'; id: string; title: string; text: string; now: string }
@@ -26,5 +30,6 @@ export type Action =
   | { type: 'task/moved'; id: string; to: Zone; between: Neighbours; now: string }
   | { type: 'task/deleted'; id: string; now: string }
   | { type: 'snapshot/loaded'; tasks: Task[]; ui: UiSettings }
-  | { type: 'storage/failed' }
+  | { type: 'storage/load-failed' }
+  | { type: 'storage/write-failed' }
   | { type: 'list-sort/selected'; key: ListSortKey };

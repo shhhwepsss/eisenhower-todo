@@ -1,7 +1,7 @@
 @use '../../../styles/tokens' as *;
 
 .error {
-  margin: 0 0 $space-md;
+  margin: 0;
   padding: $space-sm $space-md;
   border: 1px solid $color-danger;
   border-radius: $radius-sm;
