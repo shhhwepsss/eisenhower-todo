@@ -1,0 +1,73 @@
+@use '../../shared/styles/tap-target' as *;
+@use '../../styles/tokens' as *;
+
+// Задник гасит страницу, а не красит её: своя переменная, потому что цвет
+// с альфой живёт в теме (`--color-scrim`), и в темноте он плотнее.
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+}
+
+// Окно шире обычного содержимого: в нём две колонки, и текст не должен
+// сжиматься до ширины панели свойств. `max-width` обязателен вместе с
+// `width` — на узком экране окно занимает экран целиком, минус отступы.
+.dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) $menu-width;
+  width: 46rem;
+  max-width: calc(100vw - #{$space-8});
+  max-height: calc(100vh - #{$space-8});
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-lg;
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  font-family: $font-stack;
+}
+
+// Заголовок прячется от глаз, но остаётся именем окна для голоса: на экране
+// то же название стоит в поле правки выше.
+.name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Кнопка закрытия стоит поверх панели свойств, в её верхнем правом углу:
+// единственное место, где она не спорит ни с текстом, ни с подписями полей.
+.close {
+  position: absolute;
+  top: $space-2;
+  right: $space-2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-1;
+  border: none;
+  border-radius: $radius-md;
+  background: none;
+  color: var(--color-text-muted);
+  line-height: 1;
+
+  @include interactive;
+  @include tap-target-on-narrow;
+}
+
+@media (width <= $breakpoint-narrow) {
+  // Колонки складываются, текст первым: сперва то, ради чего окно открыли.
+  .dialog {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: calc(100vw - #{$space-4});
+  }
+}

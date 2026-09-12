@@ -1,0 +1,60 @@
+@use '../../../shared/styles/zone' as *;
+@use '../../../styles/tokens' as *;
+
+// Утопленная поверхность отделяет свойства от текста без второй рамки:
+// колонка читается как панель, а не как продолжение описания.
+.properties {
+  display: grid;
+  gap: $space-4;
+  align-content: start;
+  padding: $space-6 $space-4;
+  border-left: 1px solid var(--color-border);
+  border-radius: 0 $radius-lg $radius-lg 0;
+  background: var(--color-surface-sunken);
+}
+
+.field {
+  display: grid;
+  gap: $space-1;
+  justify-items: start;
+}
+
+.label {
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  @include text-caption;
+}
+
+// Квадрант — плашка цвета своей зоны, а не текст: он здесь единственное
+// значение, которое нельзя изменить, и отличать его от контролов должна сама
+// фигура. Подпись обязательна — цвет один не различает Q1 и Q3 при
+// дейтеранопии (COLOR_NOT_ALONE).
+.quadrant {
+  padding: $space-1 $space-2;
+  border-radius: $radius-md;
+  background: var(--zone-bg);
+  color: var(--zone-text);
+
+  @include zone-vars;
+  @include text-small;
+  @include inert;
+}
+
+.note {
+  color: var(--color-text-muted);
+
+  @include text-caption;
+}
+
+@media (width <= $breakpoint-narrow) {
+  // На узком экране колонки складываются, и граница переезжает с левого края
+  // на верхний: панель теперь под текстом, а не справа от него.
+  .properties {
+    padding: $space-4;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0 0 $radius-lg $radius-lg;
+  }
+}

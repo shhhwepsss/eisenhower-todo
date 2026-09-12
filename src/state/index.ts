@@ -15,6 +15,7 @@ export { useListSort } from './hooks/use-list-sort';
 export { useInboxTasks, useQuadrantTasks } from './hooks/use-matrix-tasks';
 export { useMatrixZones } from './hooks/use-matrix-zones';
 export { useIsLoading, useStorageStatus } from './hooks/use-storage-status';
+export { useTask } from './hooks/use-task';
 export { useTaskActions } from './hooks/use-task-actions';
 export { useTheme } from './hooks/use-theme';
 export type { ListSort } from './hooks/use-list-sort';

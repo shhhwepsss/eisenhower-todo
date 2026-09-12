@@ -29,12 +29,23 @@ const cardTitles = (name: string): string[] => {
 const card = (title: string): HTMLElement => screen.getByRole('article', { name: title });
 
 /**
- * Переключатели признаков — кнопки с `aria-pressed`, а не флажки
+ * Признаки разбора живут в окне задачи, а не на карточке (issue #40,
+ * ONE_EDIT_SURFACE), поэтому разбор здесь — это открыть задачу, переключить
+ * признаки и закрыть окно.
+ *
+ * Переключатели — кнопки с `aria-pressed`, а не флажки
  * (docs/specs/35-design-system.md, часть 2): включённое состояние читается
  * голосом, а не только инверсной заливкой (COLOR_NOT_ALONE).
  */
-const toggle = async (title: string, flag: string): Promise<void> => {
-  await userEvent.click(within(card(title)).getByRole('button', { name: flag }));
+const assign = async (title: string, flags: readonly string[]): Promise<void> => {
+  await userEvent.click(card(title));
+
+  const dialog: HTMLElement = screen.getByRole('dialog');
+  for (const flag of flags) {
+    await userEvent.click(within(dialog).getByRole('button', { name: flag }));
+  }
+
+  await userEvent.keyboard('{Escape}');
 };
 
 describe('зона «Входящие»', () => {
@@ -53,12 +64,11 @@ describe('зона «Входящие»', () => {
   });
 });
 
-describe('разбор переключателями', () => {
+describe('разбор признаками в окне задачи', () => {
   it('оба признака переносят задачу из «Входящих» в Q1', async () => {
     await renderWithStore(<MatrixTab />, { stored: [task('написать спеку', OLD)] });
 
-    await toggle('написать спеку', 'Срочная');
-    await toggle('написать спеку', 'Важная');
+    await assign('написать спеку', ['Срочная', 'Важная']);
 
     expect(cardTitles('Входящие')).toEqual([]);
     expect(cardTitles('Делать сейчас')).toEqual(['написать спеку']);
@@ -72,8 +82,7 @@ describe('разбор переключателями', () => {
       ],
     });
 
-    await toggle('вторая', 'Срочная');
-    await toggle('вторая', 'Важная');
+    await assign('вторая', ['Срочная', 'Важная']);
 
     expect(cardTitles('Делать сейчас')).toEqual(['первая', 'вторая']);
   });
@@ -85,7 +94,7 @@ describe('разбор переключателями', () => {
 
     expect(cardTitles('Минимизировать')).toEqual(['прибраться']);
 
-    await toggle('прибраться', 'Срочная');
+    await assign('прибраться', ['Срочная']);
 
     expect(cardTitles('Не делать')).toEqual(['прибраться']);
     expect(cardTitles('Входящие')).toEqual([]);
@@ -118,8 +127,8 @@ describe('DONE_LEAVES_MATRIX', () => {
 
 /**
  * Ручка перетаскивания живёт внутри карточки, слева от заголовка
- * (docs/specs/35-design-system.md, часть 2, критерии приёмки). Жест висит
- * на ней, а не на карточке целиком: на карточке живут переключатели разбора.
+ * (docs/specs/35-design-system.md, часть 2, критерии приёмки). Жест при этом
+ * берётся за всю карточку (issue #38), а ручка держит клавиатурный путь.
  */
 describe('ручка перетаскивания', () => {
   it('у карточки есть своя ручка, и она названа задачей', async () => {
@@ -132,13 +141,13 @@ describe('ручка перетаскивания', () => {
     expect(handle).toBeInTheDocument();
   });
 
-  it('переключатели разбора остаются отдельными кнопками, а не частью ручки', async () => {
+  it('ONE_EDIT_SURFACE: кроме ручки, кнопок на карточке нет — признаки уехали в окно', async () => {
     await renderWithStore(<MatrixTab />, { stored: [task('написать спеку', OLD)] });
 
     const buttons: HTMLElement[] = within(card('написать спеку')).getAllByRole('button');
 
     expect(buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent)).toEqual(
-      ['Перетащить «написать спеку»', 'Срочная', 'Важная'],
+      ['Перетащить «написать спеку»'],
     );
   });
 });
