@@ -1,13 +1,33 @@
 @use '../../styles/tokens' as *;
 
-.app {
-  max-width: $content-width;
-  margin: 0 auto;
-  padding: $space-xl $space-md;
+// Оболочка «Панель» (docs/specs/35-design-system.md, часть 2): меню слева,
+// контент справа. Ширина меню фиксированная — сворачивания на десктопе нет
+// (вне скоупа). Вторая колонка `minmax(0, 1fr)`, а не `1fr`: иначе широкая
+// карточка внутри растягивает колонку и матрица уезжает за экран.
+.shell {
+  display: grid;
+  grid-template-columns: $menu-width minmax(0, 1fr);
+  min-height: 100vh;
 }
 
-.title {
-  margin: 0 0 $space-lg;
-  font-size: 1.25rem;
-  font-weight: 600;
+.main {
+  display: grid;
+  align-content: start;
+  gap: $space-4;
+  min-width: 0;
+  padding: $space-6 $space-8 $space-8;
+}
+
+// Узкий экран: меню становится навигацией, зафиксированной у нижнего края
+// (см. AppMenu.module.scss), поэтому из потока оно уходит и колонка остаётся
+// одна. Нижнее поле контента — высота навигации плюс безопасная зона, иначе
+// последняя строка списка прячется под панелью (NAV_ALWAYS_REACHABLE).
+@media (width <= #{$breakpoint-narrow}) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main {
+    padding: $space-4 $space-4 calc(#{$nav-height} + #{$space-4} + env(safe-area-inset-bottom));
+  }
 }

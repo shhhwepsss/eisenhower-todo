@@ -1,10 +1,41 @@
 @use 'tokens' as *;
+@use 'theme';
 
+// `color-scheme` теперь ставит каждый блок темы в `_theme.scss` — здесь он был бы
+// третьим, несогласованным источником. `_theme.scss` подключён строкой выше ради
+// побочного эффекта: сам он ничего не экспортирует, только объявляет :root-блоки.
 :root {
-  color-scheme: light dark;
   font-family: $font-stack;
+
+  // Базовая длительность перехода. Одно место чтения для всех cursor-ролей
+  // (tokens/_cursor.scss) и единственное место, которое трогает
+  // `prefers-reduced-motion` для transition — переопределяется ниже.
+  --motion-duration: #{$duration-base};
 }
 
 body {
   margin: 0;
+  background: var(--color-surface-page);
+  color: var(--color-text-primary);
+}
+
+// Курсор перетаскивания — единственное место, где живёт `!important`
+// (docs/specs/35-design-system.md §5). Во время жеста курсор в каждый момент
+// берётся у элемента под указателем — у зоны, у соседней карточки, у фона —
+// поэтому он перебивается на уровне документа, а не ручки. Атрибут, а не класс:
+// в global.scss разрешены только :root и body, а глобальное имя класса
+// пришлось бы изобретать в обход модулей.
+body[data-dragging='true'],
+body[data-dragging='true'] * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+// При «меньше анимации» переходы не выключаются полностью (transition: none
+// ломает код, ожидающий transitionend), а сводятся к почти нулю: глаз уже не
+// видит движение, а событие всё равно приходит.
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 1ms;
+  }
 }

@@ -1,0 +1,101 @@
+// Тема (docs/specs/35-design-system.md §3, §4).
+// Единственный файл с hex во всём проекте — держится stylelint (`color-no-hex`,
+// с исключением на этот файл). `global.scss` — про документ, этот файл — про
+// систему; их правят по двум несвязанным поводам, поэтому цвет отделён намеренно.
+// Цвет зоны кодирует обе оси матрицы: срочность → температура (Q1/Q3 тёплые,
+// Q2/Q4 холодные), важность → насыщенность (Q1/Q2 цветные, Q3/Q4 приглушённые).
+// `inbox` — единственная зона без цветности: неразобранная задача не должна
+// выглядеть разобранной.
+// `line` одинаков в обеих темах (ZONE_LINE_THEME_STABLE) — средний по светлоте
+// тон, читаемый и на бледной заливке, и на глубокой. Иначе на каждую зону
+// стало бы шесть значений вместо трёх.
+// `danger` никогда не бывает заливкой — только текст и иконка удаления.
+// Заливок в интерфейсе ровно два источника: зона и поверхность.
+// `--color-surface-inset` — поверхность, лежащая ПОВЕРХ `raised` (выбранный пункт
+// меню, пилюля счётчика), поэтому в тёмной теме она светлее, а не темнее фона;
+// `--color-surface-sunken` лежит НИЖЕ страницы, и в темноте темнее. Две разные
+// роли — две переменные.
+// `--shadow-raised` в тёмной теме `none`: тень в темноте не читается, карточку
+// там отделяет граница и поверхность (критерий приёмки части 2). Тень живёт
+// здесь, а не в токенах, потому что у неё есть цвет с альфой (THEME_PARITY).
+
+@mixin light-vars {
+  color-scheme: light;
+
+  --color-surface-page: #fbfaf8;
+  --color-surface-raised: #fff;
+  --color-surface-sunken: #f2f0ec;
+  --color-surface-inset: #f2f0ec;
+  --shadow-raised: 0 1px 2px rgb(26 25 23 / 8%);
+  --color-text-primary: #1a1917;
+  --color-text-secondary: #5f5d57;
+  --color-text-muted: #8e8b83;
+  --color-border: rgb(26 25 23 / 12%);
+  --color-border-strong: rgb(26 25 23 / 28%);
+  --color-focus: #2f6feb;
+  --color-danger: #c0392b;
+  --zone-q1-bg: #fbeae4;
+  --zone-q1-line: #d8613a;
+  --zone-q1-text: #7a2d13;
+  --zone-q2-bg: #e2f2ec;
+  --zone-q2-line: #2e9b77;
+  --zone-q2-text: #0f5541;
+  --zone-q3-bg: #faf0dc;
+  --zone-q3-line: #c08a2e;
+  --zone-q3-text: #6e4a0b;
+  --zone-q4-bg: #eceff3;
+  --zone-q4-line: #7b8794;
+  --zone-q4-text: #414b57;
+  --zone-inbox-bg: #f2f0ec;
+  --zone-inbox-line: #a8a49b;
+  --zone-inbox-text: #5f5d57;
+}
+
+@mixin dark-vars {
+  color-scheme: dark;
+
+  --color-surface-page: #141413;
+  --color-surface-raised: #1e1e1c;
+  --color-surface-sunken: #0f0f0e;
+  --color-surface-inset: #2a2926;
+  --shadow-raised: none;
+  --color-text-primary: #f2f0ea;
+  --color-text-secondary: #a8a49b;
+  --color-text-muted: #78756e;
+  --color-border: rgb(242 240 234 / 14%);
+  --color-border-strong: rgb(242 240 234 / 30%);
+  --color-focus: #6c9bf5;
+  --color-danger: #e86a5a;
+  --zone-q1-bg: #3a1d12;
+  --zone-q1-line: #d8613a;
+  --zone-q1-text: #f0b49a;
+  --zone-q2-bg: #0f2e24;
+  --zone-q2-line: #2e9b77;
+  --zone-q2-text: #8fd9bf;
+  --zone-q3-bg: #33260c;
+  --zone-q3-line: #c08a2e;
+  --zone-q3-text: #e3c287;
+  --zone-q4-bg: #23272d;
+  --zone-q4-line: #7b8794;
+  --zone-q4-text: #b4bdc7;
+  --zone-inbox-bg: #22211e;
+  --zone-inbox-line: #a8a49b;
+  --zone-inbox-text: #a8a49b;
+}
+
+// Три блока, потому что состояний три ('system' | 'light' | 'dark'), а атрибут
+// `data-theme` принимает два значения. 'system' не ставит атрибут вообще —
+// решает медиазапрос, и смена системной настройки подхватывается без перезагрузки.
+:root {
+  @include light-vars;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-vars;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-vars;
+}

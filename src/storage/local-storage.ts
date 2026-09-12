@@ -101,7 +101,7 @@ export const createLocalSettingsRepository = (storage: KeyValueStorage): Setting
     save: async (settings: UiSettings): Promise<void> => {
       const snapshot: string = sealEnvelope(settings);
       write(storage, SETTINGS_KEY, snapshot);
-      log.debug('снапшот настроек записан', { listSort: settings.listSort });
+      log.debug('снапшот настроек записан', { listSort: settings.listSort, theme: settings.theme });
     },
   };
 };

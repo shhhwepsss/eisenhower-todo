@@ -91,7 +91,7 @@ describe('DND_IS_UI_ONLY', () => {
 describe('SLICE_PUBLIC_API', () => {
   it('запрещает импорт внутренностей чужого слайса', async () => {
     const messages: Linter.LintMessage[] = await lintAsUiModule(
-      "import { Tabs } from '@/ui/app/children/Tabs';\nexport const used = Tabs;\n",
+      "import { AppMenu } from '@/ui/app/children/AppMenu';\nexport const used = AppMenu;\n",
     );
 
     expect(ruleIds(messages)).toContain('no-restricted-imports');

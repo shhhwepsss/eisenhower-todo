@@ -1,0 +1,37 @@
+// Цвет зоны — «явная матрица» (docs/specs/35-design-system.md §3): каждая зона
+// называет свои три переменные явно через `data-zone`, а не собирает имя custom
+// property интерполяцией строки — опечатка в имени зоны иначе тихо съедала бы
+// цвет вместо ошибки сборки.
+// Общий миксин, а не копия блока в MatrixZone/TaskCard/TaskRow: три места красят
+// зону одинаково, и это один повод для правки, а не три (CLAUDE.md §7).
+@mixin zone-vars {
+  &[data-zone='Q1'] {
+    --zone-bg: var(--zone-q1-bg);
+    --zone-line: var(--zone-q1-line);
+    --zone-text: var(--zone-q1-text);
+  }
+
+  &[data-zone='Q2'] {
+    --zone-bg: var(--zone-q2-bg);
+    --zone-line: var(--zone-q2-line);
+    --zone-text: var(--zone-q2-text);
+  }
+
+  &[data-zone='Q3'] {
+    --zone-bg: var(--zone-q3-bg);
+    --zone-line: var(--zone-q3-line);
+    --zone-text: var(--zone-q3-text);
+  }
+
+  &[data-zone='Q4'] {
+    --zone-bg: var(--zone-q4-bg);
+    --zone-line: var(--zone-q4-line);
+    --zone-text: var(--zone-q4-text);
+  }
+
+  &[data-zone='inbox'] {
+    --zone-bg: var(--zone-inbox-bg);
+    --zone-line: var(--zone-inbox-line);
+    --zone-text: var(--zone-inbox-text);
+  }
+}

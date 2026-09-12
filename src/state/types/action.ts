@@ -1,4 +1,13 @@
-import type { ListSortKey, Neighbours, Priority, Task, TaskStatus, UiSettings, Zone } from '@/domain';
+import type {
+  ListSortKey,
+  Neighbours,
+  Priority,
+  Task,
+  TaskStatus,
+  ThemeKey,
+  UiSettings,
+  Zone,
+} from '@/domain';
 
 /**
  * Намерения, которые применяет редьюсер (docs/specs/4-architecture.md §5).
@@ -32,4 +41,5 @@ export type Action =
   | { type: 'snapshot/loaded'; tasks: Task[]; ui: UiSettings }
   | { type: 'storage/load-failed' }
   | { type: 'storage/write-failed' }
-  | { type: 'list-sort/selected'; key: ListSortKey };
+  | { type: 'list-sort/selected'; key: ListSortKey }
+  | { type: 'theme/selected'; theme: ThemeKey };

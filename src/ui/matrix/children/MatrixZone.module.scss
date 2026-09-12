@@ -1,48 +1,56 @@
+@use '../../../shared/styles/zone' as *;
 @use '../../../styles/tokens' as *;
 
 .zone {
   display: flex;
   flex-direction: column;
-  gap: $space-sm;
-  min-height: 8rem;
-  padding: $space-md;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
+  gap: $space-3;
+  min-height: $zone-min-height;
+  padding: $space-4;
+  border: 1px solid var(--zone-line);
+  border-radius: $radius-lg;
+  background: var(--zone-bg);
+  color: var(--zone-text);
+
+  @include zone-vars;
 }
 
 .over {
-  border-color: currentColor;
+  border-color: var(--color-focus);
 }
 
 .header {
   display: grid;
-  gap: 0.125rem;
+  gap: $space-05;
 }
 
 .title {
   display: flex;
   align-items: baseline;
-  gap: $space-sm;
+  gap: $space-2;
   margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
+
+  @include text-title;
+  @include inert;
 }
 
+// Счётчик и подсказка живут на заливке зоны, поэтому красятся её же текстом:
+// нейтральный вторичный цвет на цветной заливке контраста не гарантирует
+// (CONTRAST_AA проверяет именно пару «текст зоны на заливке зоны»).
 .count {
-  color: $color-muted;
-  font-size: 0.8125rem;
-  font-weight: 400;
+  @include text-caption;
+  @include inert;
 }
 
 .hint {
   margin: 0;
-  color: $color-muted;
-  font-size: 0.75rem;
+
+  @include text-caption;
 }
 
 .list {
   display: grid;
-  gap: $space-sm;
+  gap: $space-2;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -50,6 +58,6 @@
 
 .empty {
   margin: 0;
-  color: $color-muted;
-  font-size: 0.8125rem;
+
+  @include text-small;
 }

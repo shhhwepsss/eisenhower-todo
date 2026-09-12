@@ -1,5 +1,5 @@
 import { DEFAULT_UI_SETTINGS } from '@/domain';
-import type { ListSortKey, Task, TaskStatus, UiSettings } from '@/domain';
+import type { ListSortKey, Task, TaskStatus, ThemeKey, UiSettings } from '@/domain';
 
 import { storageError } from './errors';
 import { isFilledString, isRecord, isTimestamp } from './guards';
@@ -31,12 +31,18 @@ const LIST_SORT_KEYS: Record<ListSortKey, true> = {
   quadrant: true,
 };
 
+const THEME_KEYS: Record<ThemeKey, true> = { system: true, light: true, dark: true };
+
 const isTaskStatus = (value: unknown): value is TaskStatus => {
   return typeof value === 'string' && Object.hasOwn(TASK_STATUSES, value);
 };
 
 const isListSortKey = (value: unknown): value is ListSortKey => {
   return typeof value === 'string' && Object.hasOwn(LIST_SORT_KEYS, value);
+};
+
+const isThemeKey = (value: unknown): value is ThemeKey => {
+  return typeof value === 'string' && Object.hasOwn(THEME_KEYS, value);
 };
 
 /**
@@ -99,14 +105,34 @@ export const decodeTasks = (envelope: SnapshotEnvelope, raw: string): Task[] => 
   return tasks.map((task: unknown, index: number) => decodeTask(task, index, raw));
 };
 
-/** Неизвестный ключ сортировки чинится дефолтом: настройка дешевле отказа. */
+/**
+ * Неизвестное или отсутствующее значение чинится дефолтом: настройка дешевле
+ * отказа. Поля разбираются независимо друг от друга — снапшот v1 без поля
+ * `theme` (docs/specs/35-design-system.md §4, критерии приёмки) не должен
+ * терять уже сохранённый `listSort`, и наоборот.
+ */
 export const decodeSettings = (envelope: SnapshotEnvelope): UiSettings => {
-  const listSort: unknown = envelope['listSort'];
-  if (isListSortKey(listSort)) return { listSort };
+  const rawListSort: unknown = envelope['listSort'];
+  const listSort: ListSortKey = isListSortKey(rawListSort)
+    ? rawListSort
+    : DEFAULT_UI_SETTINGS.listSort;
 
-  log.warn('неизвестный ключ сортировки списка, беру значение по умолчанию', {
-    listSort,
-    fallback: DEFAULT_UI_SETTINGS.listSort,
-  });
-  return { ...DEFAULT_UI_SETTINGS };
+  if (!isListSortKey(rawListSort)) {
+    log.warn('неизвестный ключ сортировки списка, беру значение по умолчанию', {
+      listSort: rawListSort,
+      fallback: DEFAULT_UI_SETTINGS.listSort,
+    });
+  }
+
+  const rawTheme: unknown = envelope['theme'];
+  const theme: ThemeKey = isThemeKey(rawTheme) ? rawTheme : DEFAULT_UI_SETTINGS.theme;
+
+  if (!isThemeKey(rawTheme)) {
+    log.warn('неизвестная или отсутствующая тема интерфейса, беру значение по умолчанию', {
+      theme: rawTheme,
+      fallback: DEFAULT_UI_SETTINGS.theme,
+    });
+  }
+
+  return { listSort, theme };
 };

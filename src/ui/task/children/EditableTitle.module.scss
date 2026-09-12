@@ -1,18 +1,21 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
 .title {
   width: 100%;
-  padding: $space-xs 0;
+  padding: $space-1 0;
   border: none;
   border-bottom: 1px solid transparent;
   background: none;
   font: inherit;
-  font-weight: 600;
   color: inherit;
+
+  @include text-body;
+  @include editable;
+  @include tap-target-on-narrow;
 
   &:hover,
   &:focus {
-    border-bottom-color: $color-border;
-    outline: none;
+    border-bottom-color: var(--color-border);
   }
 }

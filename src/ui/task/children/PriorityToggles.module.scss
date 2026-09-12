@@ -1,15 +1,33 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
 .toggles {
   display: flex;
-  gap: $space-md;
-  color: $color-muted;
-  font-size: 0.8125rem;
+  gap: $space-1;
 }
 
 .toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: $space-xs;
-  cursor: pointer;
+  min-height: $control-height;
+  padding: 0 $space-3;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: none;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+
+  @include text-small;
+  @include interactive;
+  @include tap-target-on-narrow;
+}
+
+// Инверсия готовыми переменными: заливка — основной текст, надпись —
+// поверхность страницы. Пара уже проверена на контраст (CONTRAST_AA),
+// и новый цвет под включённое состояние не заводится.
+.toggleOn {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+  color: var(--color-surface-page);
+  font-weight: 600;
 }

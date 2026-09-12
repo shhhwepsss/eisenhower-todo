@@ -10,6 +10,13 @@ export default defineConfig({
       compiler: true,
     }),
   ],
+  server: {
+    // Явный IPv4: дефолтный host `localhost` Node ≥17 резолвит в ::1 и слушает
+    // только IPv6-loopback, а на Windows этот адрес легко оказывается недоступен
+    // (например, VPN-туннель вешает WFP-фильтр на весь IPv6) — дев-сервер тогда
+    // не открывается ни по localhost, ни по 127.0.0.1.
+    host: '127.0.0.1',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

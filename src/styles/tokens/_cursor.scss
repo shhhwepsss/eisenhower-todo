@@ -1,0 +1,55 @@
+// Cursor-роли (docs/specs/35-design-system.md §5).
+// `cursor` в одиночку не живёт: у ручки вместе с ним обязан стоять
+// `user-select: none`, у интерактивных элементов — кольцо фокуса и, если
+// применимо, `:disabled`. Переменная позволяла бы взять курсор и забыть
+// остальное, поэтому токен — миксин.
+// `touch-action: none` в `draggable` не входит — отдельный issue #36
+// (не в скоупе, см. спеку §Out).
+@use 'motion' as *;
+
+/// Кольцо фокуса — общее для ролей, у которых курсор не `default`.
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+/// Кнопки, вкладки, select, переключатели.
+@mixin interactive {
+  cursor: pointer;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--motion-duration, #{$duration-base});
+  transition-timing-function: $ease-out;
+
+  @include focus-ring;
+
+  &:disabled {
+    cursor: not-allowed;
+    color: var(--color-text-muted);
+  }
+}
+
+/// Ручка карточки.
+@mixin draggable {
+  cursor: grab;
+  user-select: none;
+
+  @include focus-ring;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+/// EditableTitle, EditableText, поля формы.
+@mixin editable {
+  cursor: text;
+
+  @include focus-ring;
+}
+
+/// Заголовок зоны, счётчик.
+@mixin inert {
+  cursor: default;
+}

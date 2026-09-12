@@ -1,0 +1,53 @@
+@use '../../../styles/tokens' as *;
+
+.control {
+  display: grid;
+  gap: $space-2;
+}
+
+.label {
+  padding: 0 $space-2;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  @include text-caption;
+  @include inert;
+}
+
+.select {
+  width: 100%;
+  min-height: $control-height;
+  padding: $space-1 $space-2;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: none;
+  font: inherit;
+  color: var(--color-text-secondary);
+
+  @include text-small;
+  @include interactive;
+}
+
+// В нижней навигации подписи места нет. Подпись при этом не удаляется, а
+// уводится с экрана: `display: none` убрал бы её и из дерева доступности, и
+// `select` остался бы вовсе без имени — замер на 390px давал `combobox` без
+// названия. Здесь же остаётся и то и другое: текста не видно, имя есть.
+@media (width <= #{$breakpoint-narrow}) {
+  .label {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .select {
+    min-height: $tap-target;
+    max-width: 8rem;
+  }
+}

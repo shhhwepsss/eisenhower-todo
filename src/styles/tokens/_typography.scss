@@ -1,0 +1,41 @@
+// Типографика — миксины, не переменные (docs/specs/35-design-system.md §2):
+// размер, высота строки и вес ходят втроём, и переменная позволяла бы взять
+// одно и забыть остальное.
+// Весов ровно два: 400 и 600. Промежуточный вес на системном шрифте даёт
+// разный результат на разных платформах.
+$font-stack: system-ui, -apple-system, 'Segoe UI', roboto, sans-serif;
+
+/// Счётчик задач, подсказка зоны.
+@mixin text-caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+/// Заметка задачи, вторичный текст.
+@mixin text-small {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/// Базовый текст, заголовок карточки.
+@mixin text-body {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+/// Заголовок зоны.
+@mixin text-title {
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+/// Заголовок приложения.
+@mixin text-display {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 600;
+}

@@ -1,19 +1,25 @@
+@use '../../../shared/styles/tap-target' as *;
 @use '../../../styles/tokens' as *;
 
 .control {
   display: flex;
   align-items: center;
-  gap: $space-sm;
-  color: $color-muted;
-  font-size: 0.8125rem;
+  gap: $space-2;
+  color: var(--color-text-muted);
+
+  @include text-caption;
 }
 
 .select {
-  padding: $space-xs $space-sm;
-  border: 1px solid $color-border;
-  border-radius: $radius-sm;
-  background: none;
+  min-height: $control-height;
+  padding: $space-1 $space-2;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface-raised);
   font: inherit;
-  color: inherit;
-  cursor: pointer;
+  color: var(--color-text-secondary);
+
+  @include text-small;
+  @include interactive;
+  @include tap-target-on-narrow;
 }

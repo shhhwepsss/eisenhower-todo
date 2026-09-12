@@ -11,6 +11,10 @@ import styles from './ListGroupSection.module.scss';
  * Группа показывается всегда, даже пустая: три группы — это разбиение
  * (LIST_PARTITION), и пропавшая с экрана группа читалась бы как «задач такого
  * рода не бывает», а не как «их сейчас нет».
+ *
+ * Группа — карточка-поверхность (часть 2): заголовок со счётчиком-пилюлей
+ * и подсказкой под ним, строки лежат внутри отдельными плитками. Тень в тёмной
+ * теме `none` (`--shadow-raised`), и карточку там отделяет граница.
  */
 export const ListGroupSection = ({ meta }: { meta: GroupMeta }) => {
   const tasks: Task[] = useListGroup(meta.id);
@@ -18,10 +22,10 @@ export const ListGroupSection = ({ meta }: { meta: GroupMeta }) => {
   return (
     <section className={styles.group} aria-label={meta.title}>
       <header className={styles.header}>
-        <h2 className={styles.title}>
-          {meta.title}
+        <div className={styles.heading}>
+          <h2 className={styles.title}>{meta.title}</h2>
           <span className={styles.count}>{tasks.length}</span>
-        </h2>
+        </div>
         <p className={styles.hint}>{meta.hint}</p>
       </header>
 

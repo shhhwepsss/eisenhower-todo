@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Task } from '@/domain';
 
 /**
@@ -6,3 +7,11 @@ import type { Task } from '@/domain';
  * собирать её обратно в каждом дочернем компоненте.
  */
 export type TaskProps = { task: Task };
+
+/**
+ * Ручка приезжает в карточку готовым узлом, а не собирается внутри неё: слушатели
+ * жеста живут в `SortableCard` (слайс матрицы), и знать о `@dnd-kit` карточке
+ * незачем — DND_IS_UI_ONLY держит границу только снаружи `ui/`, а внутри её
+ * держит эта форма пропса.
+ */
+export type TaskCardProps = TaskProps & { handle: ReactNode };

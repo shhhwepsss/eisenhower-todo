@@ -1,4 +1,5 @@
 import type { ListSortKey } from './list-sort-key';
+import type { ThemeKey } from './theme-key';
 
 /**
  * Настройки интерфейса (docs/specs/4-architecture.md §2) — всё, что приложение
@@ -8,7 +9,11 @@ import type { ListSortKey } from './list-sort-key';
  * Тип живёт в домене, хотя доменного правила в нём нет: его требуют сразу три слоя
  * (`storage/` — порт, `state/` — персист, `ui/` — переключатель), а домен —
  * единственный слой, который всем троим импортировать разрешено (спека §4).
+ *
+ * `theme` едет тем же путём, что и `listSort` (docs/specs/35-design-system.md §4):
+ * нового хранилища под неё не заводится.
  */
 export type UiSettings = {
   listSort: ListSortKey;
+  theme: ThemeKey;
 };

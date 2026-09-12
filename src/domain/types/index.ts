@@ -7,6 +7,7 @@ export type { PriorityFlags } from './priority-flags';
 export type { Quadrant } from './quadrant';
 export type { Task } from './task';
 export type { TaskStatus } from './task-status';
+export type { ThemeKey } from './theme-key';
 export type { UiSettings } from './ui-settings';
 export type { Zone } from './zone';
 export type { RankRule, ZoneMoveKey } from './zone-move';
