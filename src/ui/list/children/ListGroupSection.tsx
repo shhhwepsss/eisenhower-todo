@@ -4,6 +4,12 @@ import { TaskRow } from '@/ui/task';
 import type { GroupMeta } from '../constants';
 import styles from './ListGroupSection.module.scss';
 
+type ListGroupSectionProps = {
+  meta: GroupMeta;
+  /** Клик по строке — открыть окно правки её задачи (issue #40). */
+  onOpen: (id: string) => void;
+};
+
 /**
  * Одна группа списка. Выборку группа читает сама — тогда добавление группы это
  * строка в таблице `LIST_GROUPS`, а не ещё один проброс через пропсы.
@@ -16,7 +22,7 @@ import styles from './ListGroupSection.module.scss';
  * и подсказкой под ним, строки лежат внутри отдельными плитками. Тень в тёмной
  * теме `none` (`--shadow-raised`), и карточку там отделяет граница.
  */
-export const ListGroupSection = ({ meta }: { meta: GroupMeta }) => {
+export const ListGroupSection = ({ meta, onOpen }: ListGroupSectionProps) => {
   const tasks: Task[] = useListGroup(meta.id);
 
   return (
@@ -35,7 +41,7 @@ export const ListGroupSection = ({ meta }: { meta: GroupMeta }) => {
         <ul className={styles.list}>
           {tasks.map((task) => (
             <li key={task.id}>
-              <TaskRow task={task} />
+              <TaskRow task={task} onOpen={onOpen} />
             </li>
           ))}
         </ul>

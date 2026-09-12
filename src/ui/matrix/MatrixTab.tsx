@@ -25,10 +25,12 @@ import { useBodyDragging } from '@/shared/hooks/use-body-dragging';
 import type { BodyDragging } from '@/shared/hooks/use-body-dragging';
 import { useMatrixZones, useTaskActions } from '@/state';
 import type { MatrixZones, TaskActions } from '@/state';
+import { TaskDialog, useTaskDialog } from '@/ui/task';
+import type { TaskDialogState } from '@/ui/task';
 import { DragPreview } from './children/DragPreview';
 import { MatrixZone } from './children/MatrixZone';
 import { INBOX_META, QUADRANT_META } from './constants';
-import { findDraggedTask, resolveDrop } from './helpers';
+import { findTaskInZones, resolveDrop } from './helpers';
 import type { DropTarget } from './helpers';
 import styles from './MatrixTab.module.scss';
 
@@ -95,7 +97,15 @@ export const MatrixTab = () => {
    * захвата.
    */
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const draggedTask: Task | null = findDraggedTask(zones, draggedId);
+  const draggedTask: Task | null = findTaskInZones(zones, draggedId);
+
+  /**
+   * Задача, открытая в окне правки, ищется тем же помощником и в тех же зонах,
+   * что и задача под копией карточки: удалённая задача уходит из выборок, и окно
+   * закрывается само, потому что показывать ему становится нечего.
+   */
+  const dialog: TaskDialogState = useTaskDialog();
+  const openTask: Task | null = findTaskInZones(zones, dialog.openTaskId);
 
   const sensors: SensorDescriptor<SensorOptions>[] = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -140,7 +150,7 @@ export const MatrixTab = () => {
         onDragEnd={onDragEnd}
       >
         <div className={styles.board}>
-          <MatrixZone zone="inbox" meta={INBOX_META} tasks={zones.inbox} />
+          <MatrixZone zone="inbox" meta={INBOX_META} tasks={zones.inbox} onOpen={dialog.open} />
           <div className={styles.quadrants}>
             {QUADRANTS.map((quadrant) => (
               <MatrixZone
@@ -148,6 +158,7 @@ export const MatrixTab = () => {
                 zone={quadrant}
                 meta={QUADRANT_META[quadrant]}
                 tasks={zones[quadrant]}
+                onOpen={dialog.open}
               />
             ))}
           </div>
@@ -155,6 +166,8 @@ export const MatrixTab = () => {
 
         <DragOverlay>{draggedTask === null ? null : <DragPreview task={draggedTask} />}</DragOverlay>
       </DndContext>
+
+      <TaskDialog task={openTask} onClose={dialog.close} />
     </section>
   );
 };

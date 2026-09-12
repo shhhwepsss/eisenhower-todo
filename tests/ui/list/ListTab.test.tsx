@@ -28,6 +28,19 @@ const rowTitles = (name: string): string[] => {
 
 const row = (title: string): HTMLElement => screen.getByRole('article', { name: title });
 
+/**
+ * Правка задачи живёт в окне (issue #40, ONE_EDIT_SURFACE), и открывает его
+ * клик по строке. Строка сама по себе — представление: полей в ней нет.
+ *
+ * Пока окно открыто, остальная страница спрятана из дерева доступности — так
+ * ведёт себя модальное окно, и `getByRole` до строк списка не достаёт. Поэтому
+ * проверки списка идут после закрытия окна, а не рядом с правкой.
+ */
+const open = async (title: string): Promise<HTMLElement> => {
+  await userEvent.click(row(title));
+  return screen.getByRole('dialog');
+};
+
 describe('создание задачи', () => {
   it('S1: заголовок и Enter создают задачу во «Входящих»', async () => {
     await renderWithStore(<ListTab />);
@@ -79,14 +92,15 @@ describe('LIST_PARTITION', () => {
   });
 });
 
-describe('правка задачи', () => {
+describe('правка задачи в окне', () => {
   it('заголовок меняется по потере фокуса', async () => {
     await renderWithStore(<ListTab />, { stored: [task('черновик', OLD)] });
 
-    const title: HTMLElement = within(row('черновик')).getByRole('textbox', { name: 'Заголовок' });
+    const dialog: HTMLElement = await open('черновик');
+    const title: HTMLElement = within(dialog).getByRole('textbox', { name: 'Заголовок' });
     await userEvent.clear(title);
     await userEvent.type(title, 'готовая спека');
-    await userEvent.tab();
+    await userEvent.keyboard('{Escape}');
 
     expect(rowTitles('Входящие')).toEqual(['готовая спека']);
   });
@@ -94,20 +108,24 @@ describe('правка задачи', () => {
   it('TITLE_IS_NOT_EMPTY: пустой заголовок откатывается к прежнему', async () => {
     await renderWithStore(<ListTab />, { stored: [task('черновик', OLD)] });
 
-    const title: HTMLElement = within(row('черновик')).getByRole('textbox', { name: 'Заголовок' });
+    const dialog: HTMLElement = await open('черновик');
+    const title: HTMLElement = within(dialog).getByRole('textbox', { name: 'Заголовок' });
     await userEvent.clear(title);
-    await userEvent.tab();
+    await userEvent.keyboard('{Escape}');
 
-    expect(rowTitles('Входящие')).toEqual(['черновик']);
     expect(title).toHaveValue('черновик');
+    expect(rowTitles('Входящие')).toEqual(['черновик']);
   });
 
   it('описание сохраняется по потере фокуса', async () => {
     const { storage } = await renderWithStore(<ListTab />, { stored: [task('спека', OLD)] });
 
-    const text: HTMLElement = within(row('спека')).getByRole('textbox', { name: 'Описание' });
-    await userEvent.type(text, 'скоуп, инварианты, критерии');
-    await userEvent.tab();
+    const dialog: HTMLElement = await open('спека');
+    await userEvent.type(
+      within(dialog).getByRole('textbox', { name: 'Описание' }),
+      'скоуп, инварианты, критерии',
+    );
+    await userEvent.keyboard('{Escape}');
 
     const written: Task[] = storage.saved[storage.saved.length - 1] ?? [];
     expect(written[0]?.text).toBe('скоуп, инварианты, критерии');
@@ -116,7 +134,9 @@ describe('правка задачи', () => {
   it('удаление убирает задачу из всех групп', async () => {
     await renderWithStore(<ListTab />, { stored: [task('лишняя', OLD)] });
 
-    await userEvent.click(within(row('лишняя')).getByRole('button', { name: 'Удалить' }));
+    const dialog: HTMLElement = await open('лишняя');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Удалить' }));
+
 
     expect(rowTitles('Входящие')).toEqual([]);
     expect(rowTitles('В квадранте')).toEqual([]);
@@ -169,12 +189,13 @@ describe('переключатели признаков', () => {
       stored: [task('срочная важная', OLD, { assigned: true, urgent: true, important: false })],
     });
 
-    const element: HTMLElement = row('срочная важная');
-    expect(within(element).getByRole('button', { name: 'Срочная' })).toHaveAttribute(
+    const dialog: HTMLElement = await open('срочная важная');
+
+    expect(within(dialog).getByRole('button', { name: 'Срочная' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
-    expect(within(element).getByRole('button', { name: 'Важная' })).toHaveAttribute(
+    expect(within(dialog).getByRole('button', { name: 'Важная' })).toHaveAttribute(
       'aria-pressed',
       'false',
     );
@@ -185,14 +206,12 @@ describe('переключатели признаков', () => {
       stored: [task('прибраться', OLD, { assigned: true, urgent: true, important: false })],
     });
 
-    await userEvent.click(within(row('прибраться')).getByRole('button', { name: 'Важная' }));
+    const dialog: HTMLElement = await open('прибраться');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Важная' }));
+    await userEvent.keyboard('{Escape}');
 
-    const element: HTMLElement = row('прибраться');
-    expect(element).toHaveAttribute('data-zone', 'Q1');
-    expect(within(element).getByRole('button', { name: 'Важная' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(row('прибраться')).toHaveAttribute('data-zone', 'Q1');
+    expect(rowTitles('В квадранте')).toEqual(['прибраться']);
   });
 });
 
@@ -221,64 +240,60 @@ describe('сортировка', () => {
 });
 
 /**
- * Раскрытие строки на узком экране (docs/specs/35-design-system.md, часть 2):
- * состояние показа живёт в самой строке, нигде не сохраняется и стор не трогает.
- *
- * Тест проверяет контракт разметки, а не ширину окна: показывать ли кнопку,
- * решает медиазапрос, а `aria-expanded` и повторный тап обязаны работать
- * одинаково при любой ширине.
+ * Открытие окна со вкладки «Список» (issue #40). Раскрытие строки отсюда ушло:
+ * прятать стало нечего, а один клик не может значить и «раскрыть», и «открыть».
  */
-describe('раскрытие строки', () => {
-  const expandButton = (title: string): HTMLElement => {
-    return within(row(title)).getByRole('button', { name: 'Действия' });
-  };
-
-  it('тап раскрывает строку, повторный — сворачивает обратно', async () => {
+describe('открытие окна со строки', () => {
+  it('клик по строке открывает окно этой задачи', async () => {
     await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
 
-    expect(expandButton('новая')).toHaveAttribute('aria-expanded', 'false');
+    const dialog: HTMLElement = await open('новая');
 
-    await userEvent.click(expandButton('новая'));
-    expect(expandButton('новая')).toHaveAttribute('aria-expanded', 'true');
-
-    await userEvent.click(expandButton('новая'));
-    expect(expandButton('новая')).toHaveAttribute('aria-expanded', 'false');
+    expect(dialog).toHaveAccessibleName('новая');
   });
 
-  it('тап по самой строке раскрывает её, а не только по кнопке', async () => {
+  it('ONE_EDIT_SURFACE: в строке нет ни полей правки, ни признаков, ни удаления', async () => {
     await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
-
-    await userEvent.click(within(row('новая')).getByText('Не разобрана'));
-
-    expect(expandButton('новая')).toHaveAttribute('aria-expanded', 'true');
-  });
-
-  it('клик по контролу строку не раскрывает: правка заголовка не складывает её', async () => {
-    await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
-
-    await userEvent.click(within(row('новая')).getByRole('textbox', { name: 'Заголовок' }));
-
-    expect(expandButton('новая')).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('идемпотентность: раскрытие не пишет в хранилище', async () => {
-    const { storage } = await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
-
-    await userEvent.click(expandButton('новая'));
-    await userEvent.click(expandButton('новая'));
-
-    expect(storage.saved).toEqual([]);
-  });
-
-  it('CONTROLS_REACHABLE_MOBILE: раскрытая строка показывает статус, признаки и удаление', async () => {
-    await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
-
-    await userEvent.click(expandButton('новая'));
 
     const element: HTMLElement = row('новая');
+
+    expect(within(element).queryAllByRole('textbox')).toEqual([]);
+    expect(within(element).queryAllByRole('button')).toEqual([]);
     expect(within(element).getByRole('combobox', { name: 'Статус' })).toBeInTheDocument();
-    expect(within(element).getByRole('button', { name: 'Срочная' })).toBeInTheDocument();
-    expect(within(element).getByRole('button', { name: 'Важная' })).toBeInTheDocument();
-    expect(within(element).getByRole('button', { name: 'Удалить' })).toBeInTheDocument();
+  });
+
+  it('CONTROLS_KEEP_THEIR_PRESS: клик по статусу окно не открывает', async () => {
+    await renderWithStore(<ListTab />, {
+      stored: [task('новая', OLD, { assigned: true, urgent: true, important: true })],
+    });
+
+    await userEvent.selectOptions(
+      within(row('новая')).getByRole('combobox', { name: 'Статус' }),
+      'in_progress',
+    );
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('CONTROLS_REACHABLE_MOBILE: окно показывает статус, признаки и удаление', async () => {
+    await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
+
+    const dialog: HTMLElement = await open('новая');
+
+    expect(within(dialog).getByRole('combobox', { name: 'Статус' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Срочная' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Важная' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Удалить' })).toBeInTheDocument();
+  });
+
+  it('идемпотентность: открытие и закрытие окна в хранилище не пишет', async () => {
+    const { storage } = await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
+
+    await open('новая');
+    await userEvent.keyboard('{Escape}');
+    await open('новая');
+    await userEvent.keyboard('{Escape}');
+
+    expect(storage.saved).toEqual([]);
   });
 });

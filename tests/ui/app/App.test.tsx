@@ -109,7 +109,7 @@ describe('StorageBanner: отказ записи посреди сессии', (
       expect(screen.getByRole('alert')).toHaveTextContent('не сохраняются');
     });
     expect(screen.getByRole('tablist')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('написать спеку')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'написать спеку' })).toBeInTheDocument();
     expect(rendered.storage.saved).toHaveLength(0);
   });
 
@@ -121,8 +121,8 @@ describe('StorageBanner: отказ записи посреди сессии', (
 
     await userEvent.type(screen.getByLabelText('Новая задача'), 'вторая задача{Enter}');
 
-    expect(screen.getByDisplayValue('написать спеку')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('вторая задача')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'написать спеку' })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'вторая задача' })).toBeInTheDocument();
     expect(screen.getByRole('tablist')).toBeInTheDocument();
   });
 });
@@ -207,7 +207,10 @@ describe('счётчики вкладок в меню', () => {
   it('удалённая задача уходит из обоих счётчиков', async () => {
     await renderWithStore(<App />, { stored });
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Удалить' })[0] as HTMLElement);
+    // Удаление живёт в окне задачи (issue #40), и открывает его клик по строке.
+    await userEvent.click(screen.getByRole('article', { name: 'неразобранная' }));
+    const dialog: HTMLElement = screen.getByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Удалить' }));
 
     const list: HTMLElement = screen.getByRole('tab', { name: 'Список' });
     expect(within(list).getByText('2')).toBeInTheDocument();

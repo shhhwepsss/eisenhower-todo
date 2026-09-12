@@ -10,6 +10,8 @@ type MatrixZoneProps = {
   zone: Zone;
   meta: ZoneMeta;
   tasks: Task[];
+  /** Клик по карточке — открыть окно правки её задачи (issue #40). */
+  onOpen: (id: string) => void;
 };
 
 /**
@@ -23,7 +25,7 @@ type MatrixZoneProps = {
  * Число задач в заголовке — то, ради чего пользователь и смотрит на матрицу
  * (PRD S3): переполненный Q1 при пустом Q2 виден сразу, без отчётов.
  */
-export const MatrixZone = ({ zone, meta, tasks }: MatrixZoneProps) => {
+export const MatrixZone = ({ zone, meta, tasks, onOpen }: MatrixZoneProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: zoneDroppableId(zone) });
   const ids: string[] = tasks.map((task) => task.id);
 
@@ -48,7 +50,7 @@ export const MatrixZone = ({ zone, meta, tasks }: MatrixZoneProps) => {
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           <ul className={styles.list}>
             {tasks.map((task) => (
-              <SortableCard key={task.id} task={task} />
+              <SortableCard key={task.id} task={task} onOpen={onOpen} />
             ))}
           </ul>
         </SortableContext>

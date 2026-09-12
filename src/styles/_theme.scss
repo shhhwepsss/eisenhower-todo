@@ -18,6 +18,9 @@
 // `--shadow-raised` в тёмной теме `none`: тень в темноте не читается, карточку
 // там отделяет граница и поверхность (критерий приёмки части 2). Тень живёт
 // здесь, а не в токенах, потому что у неё есть цвет с альфой (THEME_PARITY).
+// `--color-scrim` — задник модального окна (issue #40). В тёмной теме он темнее
+// и плотнее, а не светлее: поверх тёмной страницы светлый задник читался бы как
+// ещё одна поверхность, а не как выключенный фон.
 
 @mixin light-vars {
   color-scheme: light;
@@ -34,6 +37,7 @@
   --color-border-strong: rgb(26 25 23 / 28%);
   --color-focus: #2f6feb;
   --color-danger: #c0392b;
+  --color-scrim: rgb(26 25 23 / 40%);
   --zone-q1-bg: #fbeae4;
   --zone-q1-line: #d8613a;
   --zone-q1-text: #7a2d13;
@@ -66,6 +70,7 @@
   --color-border-strong: rgb(242 240 234 / 30%);
   --color-focus: #6c9bf5;
   --color-danger: #e86a5a;
+  --color-scrim: rgb(8 8 7 / 60%);
   --zone-q1-bg: #3a1d12;
   --zone-q1-line: #d8613a;
   --zone-q1-text: #f0b49a;

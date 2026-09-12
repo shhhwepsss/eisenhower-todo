@@ -1,6 +1,6 @@
 import { useTaskActions } from '@/state';
 import type { TaskActions } from '@/state';
-import type { TaskProps } from '../types';
+import type { TaskFieldProps } from '../types';
 import styles from './EditableText.module.scss';
 
 /**
@@ -10,8 +10,10 @@ import styles from './EditableText.module.scss';
  * Правка уезжает в стор по потере фокуса: Enter в описании переводит строку,
  * а не заканчивает ввод.
  */
-export const EditableText = ({ task }: TaskProps) => {
+export const EditableText = ({ task, className }: TaskFieldProps) => {
   const { editText }: TaskActions = useTaskActions();
+  const classes: string | undefined =
+    className === undefined ? styles.text : `${styles.text} ${className}`;
 
   const commit = (area: HTMLTextAreaElement): void => {
     const next: string = area.value.trim();
@@ -21,7 +23,7 @@ export const EditableText = ({ task }: TaskProps) => {
 
   return (
     <textarea
-      className={styles.text}
+      className={classes}
       rows={1}
       defaultValue={task.text}
       placeholder="Описание"

@@ -4,6 +4,9 @@
 // Строка — приподнятая плитка на утопленной поверхности группы: рамка одна
 // строку от другой не отделяла, и на широком экране список читался сплошным
 // полотном (правка после визуальной проверки).
+// Роль курсора — `interactive`: по строке кликают, и она открывает окно правки
+// (issue #40). Контрол внутри перебивает её своей ролью, и это верно — с него
+// окно не открывается.
 .row {
   display: flex;
   align-items: center;
@@ -15,6 +18,7 @@
   box-shadow: var(--shadow-raised);
 
   @include zone-vars;
+  @include interactive;
 }
 
 // Выполненная задача гаснет: она остаётся в инвентаре (LIST_IS_COMPLETE), но
@@ -51,48 +55,44 @@
 // (docs/specs/35-design-system.md §2), поэтому едет на колонку с заголовком
 // и заметкой, а не на панель целиком: контролы справа от неё стоят на месте.
 .body {
+  display: grid;
+  gap: $space-05;
   order: 1;
   flex: 1;
   min-width: 0;
   max-width: $measure;
 }
 
-// Статус стоит отдельно от остальных контролов: на узком экране те уезжают
-// в раскрытие, а он остаётся в свёрнутой строке.
+.title {
+  margin: 0;
+  overflow-wrap: anywhere;
+
+  @include text-body;
+}
+
+// Описание в строке — одна строка предпросмотра: инвентарь отвечает «что это
+// за задача», а читать и править текст целиком уходят в окно (issue #40).
+.text {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @include text-small;
+}
+
+// Статус — единственный контрол строки: остальное уехало в окно правки
+// (issue #40, ONE_EDIT_SURFACE).
 .status {
   order: 2;
   flex: none;
 }
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  order: 3;
-  flex: none;
-}
-
-// Кнопка раскрытия нужна только узкому экрану: на широком контролы и так видны,
-// и `display: none` убирает её заодно из дерева доступности.
-.expand {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: $tap-target;
-  height: $tap-target;
-  padding: 0;
-  border: none;
-  border-radius: $radius-md;
-  background: none;
-  color: var(--color-text-muted);
-
-  @include interactive;
-}
-
-// Узкий экран (часть 2): контролы уезжают в раскрытие по тапу, строка сжимается
-// до плашки, заголовка, статуса и кнопки раскрытия. Порядок задаёт `order`,
-// а не вторая разметка: строка одна, и разъехаться двум её версиям было бы нечем.
+// Узкий экран (часть 2): плашка и статус встают в одну строку, текст — под ними.
+// Порядок задаёт `order`, а не вторая разметка: строка одна, и разъехаться двум
+// её версиям было бы нечем. Раскрытия здесь больше нет — контролы не прячутся,
+// их показывает окно, куда ведёт тап по строке.
 @media (width <= #{$breakpoint-narrow}) {
   .row {
     flex-wrap: wrap;
@@ -109,9 +109,7 @@
     width: auto;
   }
 
-  .expand {
-    display: inline-flex;
-    order: 1;
+  .status {
     margin-left: auto;
   }
 
@@ -119,20 +117,5 @@
     order: 2;
     flex: 1 1 100%;
     max-width: none;
-  }
-
-  .controls {
-    display: none;
-    order: 3;
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-  }
-
-  .row[data-expanded='true'] .controls {
-    display: flex;
-  }
-
-  .expand[aria-expanded='true'] {
-    transform: rotate(180deg);
   }
 }
