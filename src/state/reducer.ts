@@ -111,5 +111,10 @@ export const reducer = (state: AppState, action: Action): AppState => {
       log.info('сортировка списка выбрана', { from: state.ui.listSort, to: action.key });
       return { ...state, ui: { ...state.ui, listSort: action.key } };
     }
+    case 'theme/selected': {
+      if (state.ui.theme === action.theme) return state;
+      log.info('тема интерфейса выбрана', { from: state.ui.theme, to: action.theme });
+      return { ...state, ui: { ...state.ui, theme: action.theme } };
+    }
   }
 };

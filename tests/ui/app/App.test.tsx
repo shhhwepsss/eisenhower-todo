@@ -32,7 +32,7 @@ const createDeferredStorage = (): DeferredStorage => {
       saveAll: async (): Promise<void> => {},
     },
     settings: {
-      load: async (): Promise<UiSettings> => ({ listSort: 'created' }),
+      load: async (): Promise<UiSettings> => ({ listSort: 'created', theme: 'system' }),
       save: async (): Promise<void> => {},
     },
   };

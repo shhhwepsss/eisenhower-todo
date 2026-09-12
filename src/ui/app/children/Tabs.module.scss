@@ -2,21 +2,23 @@
 
 .tabs {
   display: flex;
-  gap: $space-xs;
-  border-bottom: 1px solid $color-border;
+  gap: $space-1;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .tab {
-  padding: $space-sm $space-md;
+  min-height: $control-height;
+  padding: $space-2 $space-4;
   border: none;
   border-bottom: 2px solid transparent;
   background: none;
-  font: inherit;
   color: inherit;
-  cursor: pointer;
+
+  @include text-body;
+  @include interactive;
 }
 
 .tabActive {
-  border-bottom-color: currentColor;
+  border-bottom-color: currentcolor;
   font-weight: 600;
 }

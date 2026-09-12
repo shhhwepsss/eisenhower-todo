@@ -2,14 +2,16 @@
 
 .toggles {
   display: flex;
-  gap: $space-md;
-  color: $color-muted;
-  font-size: 0.8125rem;
+  gap: $space-4;
+  color: var(--color-text-secondary);
+
+  @include text-small;
 }
 
 .toggle {
   display: flex;
   align-items: center;
-  gap: $space-xs;
-  cursor: pointer;
+  gap: $space-1;
+
+  @include interactive;
 }

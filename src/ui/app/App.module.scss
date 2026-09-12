@@ -1,13 +1,22 @@
 @use '../../styles/tokens' as *;
 
+// $content-width удалён (docs/specs/35-design-system.md §2): оболочка тянется
+// на всю ширину, матрица от этого выигрывает.
 .app {
-  max-width: $content-width;
   margin: 0 auto;
-  padding: $space-xl $space-md;
+  padding: $space-8 $space-4;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-4;
+  margin-bottom: $space-6;
 }
 
 .title {
-  margin: 0 0 $space-lg;
-  font-size: 1.25rem;
-  font-weight: 600;
+  margin: 0;
+
+  @include text-display;
 }

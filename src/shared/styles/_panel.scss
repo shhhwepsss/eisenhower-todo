@@ -2,9 +2,9 @@
 
 // Панель вкладки: общая раскладка для «Списка» и «Матрицы».
 @mixin panel {
-  padding: $space-xl 0;
+  padding: $space-8 0;
 }
 
 @mixin panel-placeholder {
-  color: $color-muted;
+  color: var(--color-text-secondary);
 }

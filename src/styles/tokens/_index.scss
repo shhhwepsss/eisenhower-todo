@@ -1,0 +1,11 @@
+// Точка входа токенов (docs/specs/35-design-system.md §1).
+// `_index.scss`, а не переименование файла: двадцать модулей уже пишут
+// `@use '../../styles/tokens' as *`, а SCSS резолвит `tokens` в `tokens/_index.scss`.
+// Ни одна строка импорта не меняется.
+// Границы: tokens/* не содержит ни одного hex. Цвет живёт в `../_theme.scss`.
+@forward 'space';
+@forward 'radius';
+@forward 'typography';
+@forward 'layout';
+@forward 'motion';
+@forward 'cursor';

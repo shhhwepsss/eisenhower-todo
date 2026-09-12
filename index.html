@@ -2,6 +2,33 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Вспышка чужой темы (docs/specs/35-design-system.md §4): localStorage
+      читается синхронно, но React монтируется после первой отрисовки — при
+      выбранной тёмной теме и светлой системе пользователь иначе увидел бы
+      белый кадр. Скрипт ставит `data-theme` на <html> до первой отрисовки.
+
+      Ключ хранилища здесь — литерал, а не импорт: у HTML нет модульной
+      системы. Тест сверяет этот литерал с `SETTINGS_KEY` из
+      src/storage/constants/schema.ts, чтобы расхождение падало явно, а не
+      молчаливой потерей темы при следующей смене ключа.
+    -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('eisenhower-todo:ui');
+          if (!raw) return;
+          var parsed = JSON.parse(raw);
+          var theme = parsed && parsed.theme;
+          if (theme === 'light' || theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+        } catch (error) {
+          // Повреждённый снапшот настроек — не повод падать на старте:
+          // приложение всё равно почитает его штатно и починит дефолтом.
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Eisenhower Todo</title>
   </head>

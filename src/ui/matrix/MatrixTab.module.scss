@@ -10,16 +10,16 @@
 .board {
   display: grid;
   grid-template-columns: minmax(14rem, 18rem) 1fr;
-  gap: $space-md;
+  gap: $space-4;
 }
 
 .quadrants {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: $space-md;
+  gap: $space-4;
 }
 
-@media (max-width: 60rem) {
+@media (width <= 60rem) {
   .board {
     grid-template-columns: 1fr;
   }

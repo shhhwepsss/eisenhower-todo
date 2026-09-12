@@ -2,38 +2,41 @@
 
 .group {
   display: grid;
-  gap: $space-sm;
+  gap: $space-2;
 }
 
 .header {
   display: grid;
-  gap: 0.125rem;
+  gap: $space-05;
 }
 
 .title {
   display: flex;
   align-items: baseline;
-  gap: $space-sm;
+  gap: $space-2;
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+
+  @include text-title;
+  @include inert;
 }
 
 .count {
-  color: $color-muted;
-  font-size: 0.8125rem;
-  font-weight: 400;
+  color: var(--color-text-secondary);
+
+  @include text-caption;
+  @include inert;
 }
 
 .hint {
   margin: 0;
-  color: $color-muted;
-  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+
+  @include text-caption;
 }
 
 .list {
   display: grid;
-  gap: $space-sm;
+  gap: $space-2;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -41,6 +44,7 @@
 
 .empty {
   margin: 0;
-  color: $color-muted;
-  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+
+  @include text-small;
 }

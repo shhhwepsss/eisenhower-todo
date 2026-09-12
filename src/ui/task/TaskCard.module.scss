@@ -1,17 +1,21 @@
+@use '../../shared/styles/zone' as *;
 @use '../../styles/tokens' as *;
 
 .card {
   display: grid;
-  gap: $space-xs;
-  padding: $space-sm;
-  border: 1px solid $color-border;
+  gap: $space-1;
+  padding: $space-2;
+  border: 1px solid var(--color-border);
+  border-left: $stripe-width solid var(--zone-line);
   border-radius: $radius-sm;
-  background: $color-surface;
+  background: var(--color-surface-raised);
+
+  @include zone-vars;
 }
 
 .title {
   margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
   overflow-wrap: anywhere;
+
+  @include text-body;
 }

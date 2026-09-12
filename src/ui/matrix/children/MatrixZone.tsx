@@ -30,6 +30,7 @@ export const MatrixZone = ({ zone, meta, tasks }: MatrixZoneProps) => {
   return (
     <section
       ref={setNodeRef}
+      data-zone={zone}
       className={isOver ? `${styles.zone} ${styles.over}` : styles.zone}
       aria-label={meta.title}
     >

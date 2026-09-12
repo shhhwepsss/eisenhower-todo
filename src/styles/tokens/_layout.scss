@@ -1,0 +1,8 @@
+// Раскладка (docs/specs/35-design-system.md §2).
+// $content-width удалён: оболочка тянется на всю ширину, матрица от этого
+// выигрывает. $measure ограничивает не ширину приложения, а длину строки
+// в колонке списка, и меряется она в символах.
+$measure: 70ch;
+$zone-min-height: 8rem;
+$control-height: 2rem;
+$stripe-width: 3px;

@@ -6,7 +6,9 @@ import { AppLoader } from './children/AppLoader';
 import { AppStorageError } from './children/AppStorageError';
 import { StorageBanner } from './children/StorageBanner';
 import { Tabs } from './children/Tabs';
+import { ThemeSelect } from './children/ThemeSelect';
 import { useActiveTab } from './hooks/use-active-tab';
+import { useApplyTheme } from './hooks/use-apply-theme';
 import styles from './App.module.scss';
 
 /**
@@ -25,10 +27,14 @@ export const App = () => {
   const { activeTab, selectTab } = useActiveTab();
   const status: StorageStatus = useStorageStatus();
   const showTabs: boolean = status === 'ready' || status === 'write-failed';
+  useApplyTheme();
 
   return (
     <main className={styles.app}>
-      <h1 className={styles.title}>Eisenhower Todo</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Eisenhower Todo</h1>
+        <ThemeSelect />
+      </div>
       {status === 'loading' && <AppLoader />}
       {status === 'unavailable' && <AppStorageError />}
       {showTabs && (

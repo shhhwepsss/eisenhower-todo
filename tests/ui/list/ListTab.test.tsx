@@ -124,6 +124,38 @@ describe('правка задачи', () => {
   });
 });
 
+/**
+ * Цвет зоны в списке (docs/specs/35-design-system.md §3, критерии приёмки):
+ * задача из Q1 показывает и полосу, и подпись зоны — цвет не остаётся
+ * единственным носителем смысла (COLOR_NOT_ALONE). Подпись берётся из той же
+ * таблицы `ZONE_LABELS`, что и заголовки квадрантов в матрице (SSOT) —
+ * «Делать сейчас», а не «Сделать».
+ */
+describe('цвет зоны в строке списка', () => {
+  it('строка задачи из Q1 несёт data-zone="Q1" и подпись зоны как в матрице', async () => {
+    await renderWithStore(<ListTab />, {
+      stored: [task('срочная важная', OLD, { assigned: true, urgent: true, important: true })],
+    });
+
+    const element: HTMLElement = row('срочная важная');
+    expect(element).toHaveAttribute('data-zone', 'Q1');
+    expect(within(element).getByText('Делать сейчас')).toBeInTheDocument();
+  });
+
+  /**
+   * Дефект визуальной проверки: у строки из «Входящих» подпись зоны дублировала
+   * заголовок группы «Входящие» прямо под ним. Полоса остаётся у всех зон,
+   * а текстовую подпись «Входящие» несёт только заголовок группы.
+   */
+  it('у неразобранной задачи нет подписи зоны — «Входящие» называет заголовок группы', async () => {
+    await renderWithStore(<ListTab />, { stored: [task('новая', OLD)] });
+
+    const element: HTMLElement = row('новая');
+    expect(element).toHaveAttribute('data-zone', 'inbox');
+    expect(within(element).queryByText('Входящие')).toBeNull();
+  });
+});
+
 describe('сортировка', () => {
   it('S4a: алфавитная сортировка меняет порядок внутри группы', async () => {
     await renderWithStore(<ListTab />, {

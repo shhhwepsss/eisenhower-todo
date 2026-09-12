@@ -2,18 +2,19 @@
 
 .button {
   margin-left: auto;
-  padding: $space-xs $space-sm;
+  min-height: $control-height;
+  padding: $space-1 $space-2;
   border: 1px solid transparent;
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
   background: none;
-  font: inherit;
-  font-size: 0.8125rem;
-  color: $color-muted;
-  cursor: pointer;
+  color: var(--color-text-secondary);
+
+  @include text-small;
+  @include interactive;
 
   &:hover,
   &:focus-visible {
-    border-color: $color-danger;
-    color: $color-danger;
+    border-color: var(--color-danger);
+    color: var(--color-danger);
   }
 }

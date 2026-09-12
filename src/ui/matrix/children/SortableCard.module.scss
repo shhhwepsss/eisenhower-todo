@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
-  gap: $space-xs;
+  gap: $space-1;
 }
 
 .dragging {
@@ -12,16 +12,13 @@
 }
 
 .handle {
-  padding: $space-xs;
+  padding: $space-1;
   border: none;
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
   background: none;
   font: inherit;
-  color: $color-muted;
+  color: var(--color-text-muted);
   line-height: 1;
-  cursor: grab;
-}
 
-.handle:focus-visible {
-  outline: 2px solid $color-border;
+  @include draggable;
 }

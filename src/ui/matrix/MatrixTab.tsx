@@ -2,6 +2,8 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import type { DragEndEvent, SensorDescriptor, SensorOptions } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { QUADRANTS } from '@/domain';
+import { useBodyDragging } from '@/shared/hooks/use-body-dragging';
+import type { BodyDragging } from '@/shared/hooks/use-body-dragging';
 import { useMatrixZones, useTaskActions } from '@/state';
 import type { MatrixZones, TaskActions } from '@/state';
 import { MatrixZone } from './children/MatrixZone';
@@ -26,13 +28,24 @@ import styles from './MatrixTab.module.scss';
 export const MatrixTab = () => {
   const zones: MatrixZones = useMatrixZones();
   const { moveToZone }: TaskActions = useTaskActions();
+  const { startDragging, stopDragging }: BodyDragging = useBodyDragging();
 
   const sensors: SensorDescriptor<SensorOptions>[] = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const onDragStart = (): void => {
+    startDragging();
+  };
+
+  const onDragCancel = (): void => {
+    stopDragging();
+  };
+
   const onDragEnd = (event: DragEndEvent): void => {
+    stopDragging();
+
     const { active, over } = event;
     if (over === null) return;
 
@@ -49,7 +62,13 @@ export const MatrixTab = () => {
       id="panel-matrix"
       aria-labelledby="tab-matrix"
     >
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={onDragStart}
+        onDragCancel={onDragCancel}
+        onDragEnd={onDragEnd}
+      >
         <div className={styles.board}>
           <MatrixZone zone="inbox" meta={INBOX_META} tasks={zones.inbox} />
           <div className={styles.quadrants}>

@@ -28,7 +28,7 @@ export type FakeStorageOptions = {
 export const createFakeStorage = (options: FakeStorageOptions = {}): FakeStorage => {
   const {
     stored = [],
-    settings = { listSort: 'created' },
+    settings = { listSort: 'created', theme: 'system' },
     loadFails = false,
     saveFails = false,
   } = options;

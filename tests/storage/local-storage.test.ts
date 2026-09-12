@@ -135,13 +135,13 @@ describe('createLocalSettingsRepository', () => {
   it('на пустом хранилище отдаёт настройки по умолчанию', async () => {
     const repository: SettingsRepository = createLocalSettingsRepository(fakeStorage());
 
-    await expect(repository.load()).resolves.toStrictEqual({ listSort: 'created' });
+    await expect(repository.load()).resolves.toStrictEqual({ listSort: 'created', theme: 'system' });
   });
 
   it('возвращает записанное', async () => {
     const storage: FakeStorage = fakeStorage();
     const repository: SettingsRepository = createLocalSettingsRepository(storage);
-    const settings: UiSettings = { listSort: 'quadrant' };
+    const settings: UiSettings = { listSort: 'quadrant', theme: 'dark' };
 
     await repository.save(settings);
 
@@ -154,7 +154,7 @@ describe('createLocalSettingsRepository', () => {
     const storage: FakeStorage = fakeStorage({ [SETTINGS_KEY]: '{"version":' });
     const repository: SettingsRepository = createLocalSettingsRepository(storage);
 
-    await expect(repository.load()).resolves.toStrictEqual({ listSort: 'created' });
+    await expect(repository.load()).resolves.toStrictEqual({ listSort: 'created', theme: 'system' });
     expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
   });

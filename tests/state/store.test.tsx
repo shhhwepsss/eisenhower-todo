@@ -12,8 +12,9 @@ import {
   useQuadrantTasks,
   useStorageStatus,
   useTaskActions,
+  useTheme,
 } from '@/state';
-import type { ListSort, StorageStatus, TaskActions } from '@/state';
+import type { ListSort, StorageStatus, TaskActions, Theme } from '@/state';
 import { storageError } from '@/storage';
 import type { Repositories } from '@/storage';
 
@@ -59,7 +60,7 @@ const createFakes = (options: FakeOptions = {}): Fakes => {
 
   const repositories: Repositories = {
     tasks: { loadAll, saveAll },
-    settings: { load: async () => ({ listSort: 'created' }), save: saveSettings },
+    settings: { load: async () => ({ listSort: 'created', theme: 'system' }), save: saveSettings },
   };
 
   return { repositories, loadAll, saveAll, saveSettings };
@@ -74,6 +75,7 @@ type Harness = {
   listAssigned: Task[];
   listDone: Task[];
   storage: StorageStatus;
+  theme: Theme;
 };
 
 const useHarness = (): Harness => {
@@ -86,6 +88,7 @@ const useHarness = (): Harness => {
     listAssigned: useListGroup('assigned'),
     listDone: useListGroup('done'),
     storage: useStorageStatus(),
+    theme: useTheme(),
   };
 };
 
@@ -181,7 +184,7 @@ describe('storage: loading', () => {
     const saveAll: Mock = vi.fn(async (): Promise<void> => {});
     const repositories: Repositories = {
       tasks: { loadAll, saveAll },
-      settings: { load: async () => ({ listSort: 'created' }), save: vi.fn(async () => {}) },
+      settings: { load: async () => ({ listSort: 'created', theme: 'system' }), save: vi.fn(async () => {}) },
     };
 
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -364,6 +367,45 @@ describe('сортировка списка', () => {
 
     expect(titles(store.current.listInbox)).toEqual(['альфа', 'бета']);
     expect(fakes.saveAll).not.toHaveBeenCalled();
+    expect(fakes.saveSettings).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Тема — настройка тем же путём, что и сортировка (docs/specs/35-design-system.md
+ * §4). Идемпотентность из критериев приёмки: повторный выбор уже активной темы
+ * не пишет в хранилище — держится сравнением ссылки в редьюсере, как и для
+ * `listSort` (docs/specs §10 архитектуры).
+ */
+describe('тема интерфейса', () => {
+  it('выбор темы уходит в хранилище настроек, а не в снапшот задач', async () => {
+    const fakes: Fakes = createFakes();
+    const store: Rendered = await mountStore(fakes);
+
+    expect(store.current.theme.theme).toBe('system');
+
+    await act(async () => {
+      store.current.theme.selectTheme('dark');
+    });
+
+    expect(store.current.theme.theme).toBe('dark');
+    expect(fakes.saveAll).not.toHaveBeenCalled();
+    expect(fakes.saveSettings).toHaveBeenCalledTimes(1);
+  });
+
+  it('повторный выбор уже активной темы не пишет в хранилище', async () => {
+    const fakes: Fakes = createFakes();
+    const store: Rendered = await mountStore(fakes);
+
+    await act(async () => {
+      store.current.theme.selectTheme('dark');
+    });
+    expect(fakes.saveSettings).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      store.current.theme.selectTheme('dark');
+    });
+
     expect(fakes.saveSettings).toHaveBeenCalledTimes(1);
   });
 });

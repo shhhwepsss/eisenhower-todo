@@ -117,22 +117,41 @@ describe('decodeTasks', () => {
 });
 
 describe('decodeSettings', () => {
-  it('читает известный ключ сортировки', () => {
-    const settings: UiSettings = decodeSettings({ version: 1, listSort: 'alphabet' });
+  it('читает известный ключ сортировки и известную тему', () => {
+    const settings: UiSettings = decodeSettings({ version: 1, listSort: 'alphabet', theme: 'dark' });
 
-    expect(settings).toStrictEqual({ listSort: 'alphabet' });
+    expect(settings).toStrictEqual({ listSort: 'alphabet', theme: 'dark' });
   });
 
   it.each([
-    { name: 'неизвестное значение', envelope: { version: 1, listSort: 'по цвету' } },
-    { name: 'поля нет', envelope: { version: 1 } },
-    { name: 'не строка', envelope: { version: 1, listSort: 7 } },
-  ])('чинит настройку дефолтом, а не отказом: $name', ({ envelope }) => {
+    { name: 'неизвестное значение', envelope: { version: 1, listSort: 'по цвету', theme: 'light' } },
+    { name: 'поля нет', envelope: { version: 1, theme: 'light' } },
+    { name: 'не строка', envelope: { version: 1, listSort: 7, theme: 'light' } },
+  ])('чинит сортировку дефолтом, а не отказом: $name', ({ envelope }) => {
     const warn: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const settings: UiSettings = decodeSettings(envelope);
 
-    expect(settings).toStrictEqual({ listSort: 'created' });
+    expect(settings).toStrictEqual({ listSort: 'created', theme: 'light' });
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  /**
+   * Снапшот v1 не знает про `theme` (docs/specs/35-design-system.md §4, вне
+   * скоупа — миграция схемы). Поле чинится дефолтом независимо от `listSort`,
+   * а не превращает всю настройку в дефолтную: сохранённая сортировка не теряется.
+   */
+  it.each([
+    { name: 'поля нет', envelope: { version: 1, listSort: 'alphabet' } },
+    { name: 'неизвестное значение', envelope: { version: 1, listSort: 'alphabet', theme: 'blue' } },
+    { name: 'не строка', envelope: { version: 1, listSort: 'alphabet', theme: 7 } },
+  ])('чинит тему дефолтом и не отбрасывает снапшот: $name', ({ envelope }) => {
+    const warn: MockInstance = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const settings: UiSettings = decodeSettings(envelope);
+
+    expect(settings).toStrictEqual({ listSort: 'alphabet', theme: 'system' });
     expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
   });

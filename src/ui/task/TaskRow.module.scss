@@ -1,16 +1,27 @@
+@use '../../shared/styles/zone' as *;
 @use '../../styles/tokens' as *;
 
 .row {
   display: grid;
-  gap: $space-xs;
-  padding: $space-sm $space-md;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
+  gap: $space-1;
+  padding: $space-2 $space-4;
+  border: 1px solid var(--color-border);
+  border-left: $stripe-width solid var(--zone-line);
+  border-radius: $radius-sm;
+
+  @include zone-vars;
+}
+
+.zoneLabel {
+  color: var(--zone-text);
+
+  @include text-caption;
+  @include inert;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: $space-md;
+  gap: $space-4;
   flex-wrap: wrap;
 }
