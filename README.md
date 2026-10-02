@@ -12,18 +12,32 @@ Vite + React + TypeScript (`strict`), Vitest, ESLint.
 
 ## Команды
 
+Команды запускаются из корня и проходят по всем пакетам (npm workspaces).
+
 ```bash
 npm install
-npm run dev      # дев-сервер
+npm run dev      # дев-сервер apps/web
 npm run build    # проверка типов + продовая сборка
-npm run test     # тесты (vitest)
-npm run lint     # eslint, включая границы слоёв
+npm run test     # тесты (vitest) каждого пакета
+npm run lint     # eslint, включая границы слоёв и пакетов
 ```
+
+## Пакеты
+
+```
+packages/core/   @eisenhower/core — домен; общий код для фронта и бека
+apps/web/        фронтенд: state, storage, ui, shared, styles
+```
+
+Общий код приложение берёт только через `@eisenhower/core`. Пакет ядра не знает о
+браузере и React. Эти правила держит ESLint (`PACKAGE_BOUNDARIES`, `CORE_IS_PORTABLE`,
+[`docs/specs/48-monorepo.md`](docs/specs/48-monorepo.md)): общая часть конфига лежит в
+`eslint.config.base.js`, у каждого пакета есть свой `eslint.config.js`.
 
 ## Границы слоёв
 
-Направление зависимостей `ui/ → state/ → domain/`, хранилище за портом
-(`docs/specs/4-architecture.md` §4, §5). Две границы держит `eslint.config.js`,
+Направление зависимостей `ui/ → state/ → @eisenhower/core`, хранилище за портом
+(`docs/specs/4-architecture.md` §4, §5). Границы держит `apps/web/eslint.config.js`,
 а не договорённость:
 
 - `STORAGE_IS_ISOLATED` — `ui/` не импортирует `storage/` и не трогает `localStorage`;
@@ -33,12 +47,12 @@ npm run lint     # eslint, включая границы слоёв
   по алиасу `@/` (например `@/ui/list`), внутренности приватны.
 
 Что все три правила действительно срабатывают, проверяет
-[`tests/layer-boundaries.test.ts`](tests/layer-boundaries.test.ts).
+[`apps/web/tests/layer-boundaries.test.ts`](apps/web/tests/layer-boundaries.test.ts).
 
 ## Раскладка кода
 
 ```
-src/ui/app/
+apps/web/src/ui/app/
   index.ts          публичный контракт слайса
   App.tsx           единственный компонент в корне
   App.module.scss   стили компонента
@@ -48,7 +62,7 @@ src/ui/app/
   constants/        константы слайса
   types/            по файлу на тип + index.ts
 
-src/domain/
+packages/core/src/
   index.ts          публичный контракт слоя
   types/            по файлу на тип + index.ts
   constants/        QUADRANT_FLAGS и ZONE_MOVES — таблица всех 25 переходов между зонами
@@ -60,7 +74,7 @@ src/domain/
   mutations.ts      чистые мутации задачи; updatedAt пишется только в touch
   text.ts           нормализация заголовка и описания
 
-src/storage/
+apps/web/src/storage/
   index.ts          публичный контракт слоя: createRepositories, ошибки, типы
   types/            порты TaskRepository / SettingsRepository, KeyValueStorage
   constants/        SCHEMA_VERSION и ключи хранилища
@@ -72,14 +86,15 @@ src/storage/
   memory.ts         запасное хранилище на время жизни вкладки
   create.ts         вход в слой: единственное место, где берётся localStorage
 
-src/shared/
+apps/web/src/shared/
   logger.ts         Log.debug / info / warn / error, соглашения — CLAUDE.md §9
   errors.ts         describeError — ошибка в нагрузку лога отдельными ключами
 
-src/styles/         global.scss (:root, body), _tokens.scss (сырые значения)
-src/shared/styles/  общие миксины оформления
+apps/web/src/styles/         global.scss (:root, body), _tokens.scss (сырые значения)
+apps/web/src/shared/styles/  общие миксины оформления
 
-tests/         зеркало src/ + общие setup.ts и layer-boundaries.test.ts
+apps/web/tests/      зеркало apps/web/src/ + setup.ts и тесты границ
+packages/core/tests/ тесты ядра, окружение node
 ```
 
 Компоненту в `children/` нельзя иметь собственную логику: нужна логика — она

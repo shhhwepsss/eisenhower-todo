@@ -1,0 +1,17 @@
+{
+  "name": "@eisenhower/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "fractional-indexing": "^4.0.0"
+  }
+}

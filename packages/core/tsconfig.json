@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // CORE_IS_PORTABLE (docs/specs/48-monorepo.md): без DOM в lib обращение к window,
+    // document или localStorage не пройдёт проверку типов — ядро будет работать и на сервере.
+    "lib": ["ES2022"],
+    "types": ["vitest/globals"]
+  },
+  "include": ["src", "tests", "vitest.config.ts", "eslint.config.js"]
+}
