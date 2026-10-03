@@ -16,6 +16,11 @@ export default defineConfig({
     // (например, VPN-туннель вешает WFP-фильтр на весь IPv6) — дев-сервер тогда
     // не открывается ни по localhost, ни по 127.0.0.1.
     host: '127.0.0.1',
+    // ONE_ORIGIN (docs/specs/50-api-skeleton.md): браузер ходит в API через этот же
+    // сервер, как на проде — без CORS. API поднимает `npm run dev:api`.
+    proxy: {
+      '/api': 'http://127.0.0.1:8787',
+    },
   },
   resolve: {
     alias: {

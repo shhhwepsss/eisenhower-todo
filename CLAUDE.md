@@ -265,6 +265,11 @@ curl -s http://127.0.0.1:5173/src/ui/app/App.tsx | head -20   # ищем _c( и 
 выражений, ни в колбэках. Правило распространяется на `apps/web/src/`, `apps/web/tests/`,
 `packages/core/src/` и `packages/core/tests/`, включая React-компоненты (`export const App = () => ...`).
 
+**Исключение — `apps/api`.** Сущности бека — классы с методами, порядок членов
+public → private → static (`docs/specs/50-api-skeleton.md`). Метод класса в ESTree —
+`FunctionExpression`, поэтому запрет `no-restricted-syntax` в `apps/api/eslint.config.js`
+снят. Объявления `function` и не-стрелочные колбэки запрещены и там.
+
 Зачем: одна форма записи на весь проект. Читателю не приходится держать в голове
 разницу между объявлением и выражением, а `this` и хойстинг не зависят от того,
 как записана функция.

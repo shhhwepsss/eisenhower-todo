@@ -1,3 +1,17 @@
 [build]
   command = "npm run build"
   publish = "apps/web/dist"
+
+# Функции берутся из сборки, а не из исходников: `@eisenhower/core` вклеивается в
+# функцию при `vite build` (FUNCTION_IS_SELF_CONTAINED, docs/specs/50-api-skeleton.md).
+[functions]
+  directory = "apps/api/dist/functions"
+
+# Деплой только при мерже в production (docs/specs/50-api-skeleton.md, «Деплой»).
+# `ignore`, завершившийся с кодом 0, отменяет сборку: превью PR и деплои прочих веток
+# не собираются.
+[context.deploy-preview]
+  ignore = "exit 0"
+
+[context.branch-deploy]
+  ignore = "exit 0"

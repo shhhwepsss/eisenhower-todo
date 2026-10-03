@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Без DOM: API живёт в Node. `Request`/`Response`/`fetch` приходят из @types/node.
+    "lib": ["ES2022"],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src", "functions", "tests", "vite.config.ts", "eslint.config.js"]
+}
