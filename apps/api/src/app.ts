@@ -1,5 +1,5 @@
 import type { Hono } from 'hono';
-import { MIGRATION_HASHES } from './constants/migration-hashes.constant';
+import { LATEST_MIGRATION_HASH } from './constants/latest-migration-hash.constant';
 import { createApp } from './create-app';
 import { NeonDatabaseProbe } from './db/neon/neon-database-probe';
 import type { AppEnv, DatabaseProbe, Env } from './types';
@@ -13,7 +13,7 @@ import type { AppEnv, DatabaseProbe, Env } from './types';
  * (MIGRATIONS_STAY_OUT_OF_FUNCTION, docs/specs/51-db-migrations.md).
  */
 const createDatabaseProbe = (env: Env): DatabaseProbe => {
-  return new NeonDatabaseProbe(env.DATABASE_URL, MIGRATION_HASHES);
+  return new NeonDatabaseProbe(env.DATABASE_URL, LATEST_MIGRATION_HASH);
 };
 
 export const app: Hono<AppEnv> = createApp({ createDatabaseProbe });

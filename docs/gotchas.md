@@ -56,15 +56,15 @@
 ### `/api/health` отвечает `500 {"status":"schema_behind"}`
 
 - **Что это значит.** База отвечает, но в её журнале миграций
-  (`drizzle.__drizzle_migrations`) нет миграции, с которой собран код, — или журнала нет
-  вовсе.
+  (`drizzle.__drizzle_migrations`) нет последней миграции, с которой собран код, — или
+  журнала нет вовсе.
 - **Что делать.** На проде — смотреть лог сборки: `db:migrate` должен был отработать до
   публикации. Локально — `npm run db:migrate`.
-- **Локальная ловушка.** Хеши миграций dev-сервер читает при старте. После
-  `npm run db:generate` перезапустить `npm run dev:api`, иначе он сверяет со старым списком.
+- **Локальная ловушка.** Хеш последней миграции dev-сервер читает при старте. После
+  `npm run db:generate` перезапустить `npm run dev:api`, иначе он сверяет со старым хешем.
 - **Обратное расхождение сбоем не считается.** Запись журнала, которой нет в коде, — это
   база новее кода: так бывает между миграцией и публикацией деплоя и после отката.
-- Код: `apps/api/src/db/neon/neon-database-probe.ts`, хеши — `apps/api/vite.config.ts`.
+- Код: `apps/api/src/db/neon/neon-database-probe.ts`, хеш — `apps/api/vite.config.ts`.
 
 ### `/api/health` ходит в базу на каждый запрос
 
@@ -83,7 +83,7 @@
   - схема — `apps/api/src/db/schema.ts`, общая для всех провайдеров;
   - миграции — формат `drizzle-kit` (`apps/api/drizzle/`, `meta/_journal.json`) и журнал
     `drizzle.__drizzle_migrations` в базе;
-  - хеши миграций для `/api/health` — их считает `readMigrationFiles` из Drizzle
+  - хеш последней миграции для `/api/health` — его считает `readMigrationFiles` из Drizzle
     (`apps/api/vite.config.ts`);
   - проверка базы и migrator читают журнал Drizzle напрямую.
 - **Чего допущение не касается.** Код приложения вне `src/db/` о Drizzle не знает: он

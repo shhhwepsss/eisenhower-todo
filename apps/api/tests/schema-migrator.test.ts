@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MIGRATION_HASHES } from '../src/constants/migration-hashes.constant';
+import { LATEST_MIGRATION_HASH } from '../src/constants/latest-migration-hash.constant';
 import { NeonSchemaMigrator } from '../src/db/neon/neon-schema-migrator';
 import { NeonDatabaseProbe } from '../src/db/neon/neon-database-probe';
 import type { DatabaseCheck, DatabaseProbe, SchemaMigrator } from '../src/types';
@@ -204,7 +204,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('SCHEMA_MATCHES_CODE: базу не мигрировали — schema_behind, после миграции — ok', async () => {
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES);
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, LATEST_MIGRATION_HASH);
     const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
 
     const before: DatabaseCheck = await probe.check();
@@ -215,11 +215,10 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     expect(after).toEqual({ ok: true });
   });
 
-  it('SCHEMA_MATCHES_CODE: в коде есть миграция, которой нет в журнале, — schema_behind', async () => {
+  it('SCHEMA_MATCHES_CODE: последней миграции кода нет в журнале — schema_behind', async () => {
     const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await migrator.migrate();
-    const expected: string[] = [...MIGRATION_HASHES, UNKNOWN_HASH];
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, expected);
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, UNKNOWN_HASH);
 
     const check: DatabaseCheck = await probe.check();
 
@@ -231,17 +230,33 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     await addMigration(tempDir, BROKEN_TAG, FIXED_SQL);
     const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
     await migrator.migrate();
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES);
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, LATEST_MIGRATION_HASH);
 
     const check: DatabaseCheck = await probe.check();
 
     expect(check).toEqual({ ok: true });
   });
 
+  it('в коде нет миграций — проверяется только связь с базой', async () => {
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, null);
+
+    const check: DatabaseCheck = await probe.check();
+
+    expect(check).toEqual({ ok: true });
+  });
+
+  it('хеш из сборки — хеш последней миграции в папке', async () => {
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    await migrator.migrate();
+    const journal: Row[] = await readJournal();
+
+    expect(journal.at(-1)?.hash).toBe(LATEST_MIGRATION_HASH);
+  });
+
   it('DATABASE_FAILURE_IS_REPORTED: база не успела ответить — проверка не ждёт дольше предела', async () => {
     const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await migrator.migrate();
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES, 0);
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, LATEST_MIGRATION_HASH, 0);
 
     const check: DatabaseCheck = await probe.check();
 

@@ -18,21 +18,22 @@ type NodeListener = (incoming: IncomingMessage, outgoing: ServerResponse) => Pro
 const BUILD_VERSION: string = process.env.COMMIT_REF ?? 'dev';
 
 /**
- * Хеши миграций из `drizzle/` (docs/specs/51-db-migrations.md, SCHEMA_MATCHES_CODE).
- * Читает их тот же `readMigrationFiles`, что и migrator drizzle, — хеш в сборке и хеш в
- * журнале базы считаются одним кодом. В функцию едут только хеши: по ним `/api/health`
- * сверяет код с журналом, а сами файлы миграций остаются в репозитории.
+ * Хеш последней миграции из `drizzle/` (docs/specs/51-db-migrations.md,
+ * SCHEMA_MATCHES_CODE); `null`, если миграций нет. Читает его тот же `readMigrationFiles`,
+ * что и migrator drizzle, — хеш в сборке и хеш в журнале базы считаются одним кодом. В
+ * функцию едет только этот хеш: по нему `/api/health` сверяет код с журналом, а сами
+ * файлы миграций остаются в репозитории.
  *
- * Читаются при старте Vite: после `npm run db:generate` dev-сервер нужно перезапустить.
+ * Читается при старте Vite: после `npm run db:generate` dev-сервер нужно перезапустить.
  */
-const readMigrationHashes = (): string[] => {
+const readLatestMigrationHash = (): string | null => {
   const folderUrl: URL = new URL('./drizzle', import.meta.url);
   const migrationsFolder: string = fileURLToPath(folderUrl);
   const migrations: MigrationMeta[] = readMigrationFiles({ migrationsFolder });
-  return migrations.map((migration) => migration.hash);
+  return migrations.at(-1)?.hash ?? null;
 };
 
-const MIGRATION_HASHES: string[] = readMigrationHashes();
+const LATEST_MIGRATION_HASH: string | null = readLatestMigrationHash();
 
 /**
  * Dev-сервер API (docs/specs/50-api-skeleton.md, «Разработка»). Каждый запрос
@@ -83,7 +84,7 @@ export default defineConfig({
   appType: 'custom',
   define: {
     __BUILD_VERSION__: JSON.stringify(BUILD_VERSION),
-    __MIGRATION_HASHES__: JSON.stringify(MIGRATION_HASHES),
+    __LATEST_MIGRATION_HASH__: JSON.stringify(LATEST_MIGRATION_HASH),
   },
   server: {
     // Явный IPv4 — по той же причине, что в apps/web/vite.config.ts.

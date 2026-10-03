@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type { DatabaseCheck, DatabaseFailure, DatabaseProbe } from '../../types';
@@ -10,27 +11,31 @@ import { configureNeonFor } from './neon-stand';
  * Проверка базы через HTTP-драйвер Neon — тот же, которым пойдут рабочие запросы
  * (docs/specs/51-db-migrations.md).
  *
- * Сверяет миграции кода с журналом базы (SCHEMA_MATCHES_CODE): `expectedHashes` — хеши
- * миграций из `apps/api/drizzle/` на момент сборки, журнал — `drizzle.__drizzle_migrations`.
- * Каждая миграция кода обязана быть в журнале. Лишние записи журнала сбоем не считаются:
- * база новее кода в окне между миграцией и публикацией деплоя, и это штатно.
+ * Сверяет код с журналом базы (SCHEMA_MATCHES_CODE): `latestMigrationHash` — хеш
+ * последней миграции из `apps/api/drizzle/` на момент сборки, журнал —
+ * `drizzle.__drizzle_migrations`. Запись с этим хешем обязана быть в журнале.
+ *
+ * Одного хеша достаточно: миграции применяются по порядку одной транзакцией, а пропуск
+ * более ранней ловит `db:migrate` при деплое (NO_MIGRATION_IS_SKIPPED). Записи журнала
+ * новее этой сбоем не считаются: база новее кода в окне между миграцией и публикацией
+ * деплоя, и это штатно.
  *
  * Соединения нет: каждый запрос — отдельный HTTP-вызов, объект ничего не держит.
  * Ответа ждёт ограниченное время: зависшая база — тоже «недоступна».
  */
 export class NeonDatabaseProbe implements DatabaseProbe {
   private readonly db: NeonHttpDatabase;
-  private readonly expectedHashes: readonly string[];
+  private readonly latestMigrationHash: string | null;
   private readonly timeoutMs: number;
 
   constructor(
     databaseUrl: string,
-    expectedHashes: readonly string[],
+    latestMigrationHash: string | null,
     timeoutMs: number = DATABASE_PROBE_TIMEOUT_MS,
   ) {
     configureNeonFor(databaseUrl);
     this.db = drizzle(databaseUrl);
-    this.expectedHashes = expectedHashes;
+    this.latestMigrationHash = latestMigrationHash;
     this.timeoutMs = timeoutMs;
   }
 
@@ -50,27 +55,27 @@ export class NeonDatabaseProbe implements DatabaseProbe {
   }
 
   private async compareWithJournal(): Promise<DatabaseCheck> {
-    let applied: Set<unknown>;
+    let applied: boolean;
     try {
-      applied = await this.readAppliedHashes();
+      applied = await this.isLatestMigrationApplied();
     } catch (cause) {
       const reason: DatabaseFailure = this.isMissingJournal(cause) ? 'schema_behind' : 'database_unavailable';
       return { ok: false, reason, cause };
     }
-    const missing: string[] = this.expectedHashes.filter((hash) => !applied.has(hash));
-    if (missing.length === 0) return { ok: true };
-    const cause: Error = new Error(
-      `в журнале базы нет ${missing.length} из ${this.expectedHashes.length} миграций кода`,
-    );
+    if (applied) return { ok: true };
+    const cause: Error = new Error('в журнале базы нет последней миграции кода');
     return { ok: false, reason: 'schema_behind', cause };
   }
 
-  private async readAppliedHashes(): Promise<Set<unknown>> {
-    const journal: { rows: Record<string, unknown>[] } = await this.db.execute(
-      sql`select hash from drizzle.__drizzle_migrations`,
-    );
-    const hashes: unknown[] = journal.rows.map((row) => row.hash);
-    return new Set(hashes);
+  /** Миграций в коде нет — сверять нечего, проверяется только связь с базой. */
+  private async isLatestMigrationApplied(): Promise<boolean> {
+    const hash: string | null = this.latestMigrationHash;
+    const query: SQL =
+      hash === null
+        ? sql`select 1`
+        : sql`select 1 from drizzle.__drizzle_migrations where hash = ${hash} limit 1`;
+    const result: { rows: unknown[] } = await this.db.execute(query);
+    return result.rows.length > 0;
   }
 
   /**
