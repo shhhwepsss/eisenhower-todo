@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { getRequestListener } from '@hono/node-server';
+import { loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { defineConfig } from 'vitest/config';
 
@@ -34,8 +35,31 @@ const serveApi = (): Plugin => {
   };
 };
 
+/**
+ * Окружение dev-сервера из `apps/api/.env` (docs/specs/51-db-migrations.md). Vite отдаёт
+ * коду только `VITE_*` и только через `import.meta.env`, а API читает `process.env` —
+ * как на проде, где переменные кладёт туда Netlify. Заданное в процессе не
+ * перезаписывается: переменная из командной строки сильнее файла.
+ *
+ * В тестах не применяется: тест сам задаёт окружение, и `.env` разработчика не должен
+ * подменять ему «переменная не задана».
+ */
+const loadDotEnv = (): Plugin => {
+  return {
+    name: 'eisenhower:load-dot-env',
+    apply: 'serve',
+    configureServer: (server: ViteDevServer) => {
+      if (server.config.mode === 'test') return;
+      const fileEnv: Record<string, string> = loadEnv(server.config.mode, server.config.root, '');
+      for (const [name, value] of Object.entries(fileEnv)) {
+        process.env[name] ??= value;
+      }
+    },
+  };
+};
+
 export default defineConfig({
-  plugins: [serveApi()],
+  plugins: [loadDotEnv(), serveApi()],
   appType: 'custom',
   define: {
     __BUILD_VERSION__: JSON.stringify(BUILD_VERSION),

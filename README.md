@@ -17,7 +17,8 @@ Vite + React + TypeScript (`strict`), Vitest, ESLint.
 ```bash
 npm install
 npm run dev      # дев-сервер apps/web; /api проксируется на dev-сервер API
-npm run dev:api  # дев-сервер apps/api на 127.0.0.1:8787 (во втором терминале)
+npm run dev:api  # дев-сервер apps/api на 127.0.0.1:8787 (во втором терминале);
+                 # окружение — apps/api/.env по образцу apps/api/.env.example
 npm run build    # проверка типов + продовая сборка
 npm run test     # тесты (vitest) каждого пакета
 npm run lint     # eslint, включая границы слоёв и пакетов

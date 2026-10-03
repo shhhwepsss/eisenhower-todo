@@ -32,9 +32,11 @@ describe('FUNCTION_IS_SELF_CONTAINED', () => {
 
   beforeAll(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'eisenhower-api-'));
+    vi.stubEnv('DATABASE_URL', 'postgresql://user:secret@ep-test.neon.tech/neondb');
   });
 
   afterAll(async () => {
+    vi.unstubAllEnvs();
     await rm(tempDir, { recursive: true, force: true });
   });
 
