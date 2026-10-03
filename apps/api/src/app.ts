@@ -14,6 +14,10 @@ import type { ErrorBody, HealthBody, Logger } from './types';
  */
 const log: Logger = createLog('api/app');
 
+// TODO(#60): обработчики запросов разнести по модулям (маршрут, контроллер, ответ),
+// а не держать инлайн-функциями в этом файле — новые ручки (#46, #51, #52) должны
+// добавляться модулем, а не ростом app.ts. Здесь останется только сборка приложения.
+
 const respondHealth = (c: Context): Response => {
   const body: HealthBody = { status: 'ok', version: BUILD_VERSION };
   return c.json(body);
