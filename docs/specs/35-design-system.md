@@ -25,7 +25,7 @@ Issue: https://github.com/shhhwepsss/eisenhower-todo/issues/35
   без него не получает событий на тач-устройствах, то есть drag на телефоне не работает.
   Это баг функциональности, и он не должен ждать редизайна.
 - Миграция схемы хранилища на v2. Недостающее поле `theme` заполняется дефолтом на v1:
-  подъём версии по `src/storage/constants/schema.ts` означает отказ читать v1, а ломать
+  подъём версии по `src/storage/constants/schema.constant.ts` означает отказ читать v1, а ломать
   тут нечего.
 - Курсор над целью броска (`dropzone`). Во время жеста курсор один на весь экран, иначе
   он мигает при пересечении границ зон. Цель подсвечивается рамкой.
@@ -380,7 +380,7 @@ export default {
 ## Инварианты
 
 - `DOMAIN_UNTOUCHED`: диф не содержит изменений в `src/domain/`, `src/state/`, `src/storage/`.
-- `SHELL_IS_SINGLE_SOURCE`: список вкладок остаётся один — `TABS` в `src/ui/app/constants/tabs.ts`.
+- `SHELL_IS_SINGLE_SOURCE`: список вкладок остаётся один — `TABS` в `src/ui/app/constants/tabs.constant.ts`.
 - `NAV_ALWAYS_REACHABLE`: на узком экране навигация видна без прокрутки, и ни одна
   строка списка не остаётся под ней.
 - `CONTROLS_REACHABLE_MOBILE`: каждое действие строки (статус, признаки, удаление)

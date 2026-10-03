@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { BUILD_VERSION } from './constants/build-version.constant';
 import { createLog } from './logger';
-import type { Logger } from './logger';
+import type { ErrorBody, HealthBody, Logger } from './types';
 
 /**
  * Приложение API (docs/specs/50-api-skeleton.md). Одно на функцию Netlify и на
@@ -12,13 +13,6 @@ import type { Logger } from './logger';
  * как прод.
  */
 const log: Logger = createLog('api/app');
-
-/** Версия сборки: коммит, из которого собран деплой. Подставляет Vite (`define`). */
-const BUILD_VERSION: string = __BUILD_VERSION__;
-
-type HealthBody = { status: 'ok'; version: string };
-
-type ErrorBody = { error: 'not_found' | 'internal' };
 
 const respondHealth = (c: Context): Response => {
   const body: HealthBody = { status: 'ok', version: BUILD_VERSION };

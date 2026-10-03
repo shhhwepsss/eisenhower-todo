@@ -6,23 +6,9 @@
  * в `@eisenhower/core` логгеру не место (там логов нет), а приложения друг друга не
  * импортируют (`PACKAGE_BOUNDARIES`).
  */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-/** Структурированная нагрузка: ищется грепом по ключам, а не по склейке строк. */
-export type LogPayload = Record<string, unknown>;
-
-export type Logger = {
-  /** Подробности хода выполнения: что с чем сравнили, почему свернули в no-op. */
-  debug(message: string, payload?: LogPayload): void;
-  /** Заметные события: старт приложения, применённое действие пользователя. */
-  info(message: string, payload?: LogPayload): void;
-  /** Пережитая аномалия: данные починены дефолтом, работа продолжается. */
-  warn(message: string, payload?: LogPayload): void;
-  /** Операция не выполнена: исключение, отказ хранилища. */
-  error(message: string, payload?: LogPayload): void;
-};
-
-const SEVERITY: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
+import { SEVERITY } from './constants/log-severity.constant';
+import type { LogLevel, LogPayload, Logger } from './types';
 
 /**
  * В разработке видно всё, в проде — только то, что требует внимания.
