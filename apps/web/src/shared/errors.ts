@@ -1,4 +1,4 @@
-import type { LogPayload } from './logger';
+import type { LogPayload } from './types';
 
 /**
  * Ошибка — в нагрузку лога отдельными ключами (CLAUDE.md §9): по `message`

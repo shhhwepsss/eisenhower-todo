@@ -1,7 +1,7 @@
 import type { MockInstance } from 'vitest';
 
 import { Log, createLog, getLogLevel, setLogLevel } from '@/shared/logger';
-import type { LogLevel, Logger } from '@/shared/logger';
+import type { LogLevel, Logger } from '@/shared/types';
 
 const LEVELS: readonly LogLevel[] = ['debug', 'info', 'warn', 'error'];
 

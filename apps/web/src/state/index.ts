@@ -18,7 +18,4 @@ export { useIsLoading, useStorageStatus } from './hooks/use-storage-status';
 export { useTask } from './hooks/use-task';
 export { useTaskActions } from './hooks/use-task-actions';
 export { useTheme } from './hooks/use-theme';
-export type { ListSort } from './hooks/use-list-sort';
-export type { MatrixZones } from './hooks/use-matrix-zones';
-export type { Theme } from './hooks/use-theme';
-export type { StorageStatus, TaskActions } from './types';
+export type { ListSort, MatrixZones, StorageStatus, TaskActions, Theme } from './types';

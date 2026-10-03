@@ -1,18 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { Task, Zone } from '@eisenhower/core';
-import { zoneDroppableId } from '../helpers';
-import type { ZoneMeta } from '../constants';
+import { zoneDroppableId } from '../lib';
 import { SortableCard } from './SortableCard';
 import styles from './MatrixZone.module.scss';
-
-type MatrixZoneProps = {
-  zone: Zone;
-  meta: ZoneMeta;
-  tasks: Task[];
-  /** Клик по карточке — открыть окно правки её задачи (issue #40). */
-  onOpen: (id: string) => void;
-};
+import type { MatrixZoneProps } from '../types';
 
 /**
  * Одна зона матрицы: «Входящие» или квадрант. Обе устроены одинаково —

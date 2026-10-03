@@ -1,6 +1,10 @@
-export type { Action } from './action';
-export type { AppState } from './app-state';
-export type { AppStateProviderProps } from './app-state-provider';
-export type { StorageStatus } from './storage-status';
-export type { Store } from './store';
-export type { TaskActions } from './task-actions';
+export type { Action } from './action.type';
+export type { AppStateProviderProps } from './app-state-provider.type';
+export type { AppState } from './app-state.type';
+export type { ListSort } from './list-sort.type';
+export type { MatrixZones } from './matrix-zones.type';
+export type { StorageStatus } from './storage-status.type';
+export type { Store } from './store.type';
+export type { TaskActions } from './task-actions.type';
+export type { TaskMutation } from './task-mutation.type';
+export type { Theme } from './theme.type';

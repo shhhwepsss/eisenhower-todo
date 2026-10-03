@@ -1,7 +1,7 @@
 import { createTask } from '@eisenhower/core';
 import type { Task } from '@eisenhower/core';
 import type { MatrixZones } from '@/state';
-import { findTaskInZones } from '@/ui/matrix/helpers';
+import { findTaskInZones } from '@/ui/matrix/lib';
 
 /**
  * Поиск задачи матрицы по идентификатору. Им пользуются копия карточки в

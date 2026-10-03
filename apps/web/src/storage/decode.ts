@@ -5,6 +5,7 @@ import { storageError } from './errors';
 import { isFilledString, isRecord, isTimestamp } from './guards';
 import { log } from './log';
 import type { SnapshotEnvelope } from './types';
+import { LIST_SORT_KEYS, TASK_STATUSES, THEME_KEYS } from './constants/decode.constant';
 
 /**
  * Содержимое конверта → значения, с которыми работает приложение
@@ -16,22 +17,6 @@ import type { SnapshotEnvelope } from './types';
  * строка остаётся в хранилище нетронутой. Настройка — предпочтение: неизвестное
  * значение стоит ровно один клик, поэтому оно чинится дефолтом.
  */
-
-/**
- * Множества значений заданы `Record`ом от типа, а не списком: список пришлось бы
- * держать в согласии с объединением вручную, а `Record` требует все ключи —
- * новый статус без строки здесь не соберётся.
- */
-const TASK_STATUSES: Record<TaskStatus, true> = { todo: true, in_progress: true, done: true };
-
-const LIST_SORT_KEYS: Record<ListSortKey, true> = {
-  created: true,
-  alphabet: true,
-  status: true,
-  quadrant: true,
-};
-
-const THEME_KEYS: Record<ThemeKey, true> = { system: true, light: true, dark: true };
 
 const isTaskStatus = (value: unknown): value is TaskStatus => {
   return typeof value === 'string' && Object.hasOwn(TASK_STATUSES, value);

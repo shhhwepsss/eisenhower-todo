@@ -1,28 +1,5 @@
-/**
- * Логирование приложения (CLAUDE.md §9).
- *
- * Четыре уровня, один формат, один порог. Логгер живёт в `shared/`, потому что
- * доменного смысла в нём нет, и им пользуются все слои, кроме `domain/`:
- * доменные функции остаются чистыми, а «почему домен решил ничего не делать»
- * логирует вызывающая сторона, сравнив ссылку до и после.
- */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-/** Структурированная нагрузка: ищется грепом по ключам, а не по склейке строк. */
-export type LogPayload = Record<string, unknown>;
-
-export type Logger = {
-  /** Подробности хода выполнения: что с чем сравнили, почему свернули в no-op. */
-  debug(message: string, payload?: LogPayload): void;
-  /** Заметные события: старт приложения, применённое действие пользователя. */
-  info(message: string, payload?: LogPayload): void;
-  /** Пережитая аномалия: данные починены дефолтом, работа продолжается. */
-  warn(message: string, payload?: LogPayload): void;
-  /** Операция не выполнена: исключение, отказ хранилища. */
-  error(message: string, payload?: LogPayload): void;
-};
-
-const SEVERITY: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
+import { SEVERITY } from './constants/log-severity.constant';
+import type { LogLevel, LogPayload, Logger } from './types';
 
 /**
  * В разработке видно всё, в проде — только то, что требует внимания.

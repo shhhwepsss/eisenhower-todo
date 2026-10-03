@@ -1,5 +1,5 @@
 import { describeError } from '@/shared/errors';
-import type { LogPayload } from '@/shared/logger';
+import type { LogPayload } from '@/shared/types';
 
 describe('describeError', () => {
   it('раскладывает ошибку на имя, сообщение и стек', () => {

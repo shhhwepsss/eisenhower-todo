@@ -1,5 +1,5 @@
 import { createLog } from '@/shared/logger';
-import type { Logger } from '@/shared/logger';
+import type { Logger } from '@/shared/types';
 
 /**
  * Логгер слоя состояния (CLAUDE.md §9). Домен молчит по определению, поэтому

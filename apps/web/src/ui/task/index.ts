@@ -7,4 +7,4 @@ export { TaskDialog } from './TaskDialog';
 export { TaskRow } from './TaskRow';
 export { ZONE_LABELS } from './constants';
 export { useTaskDialog } from './hooks/use-task-dialog';
-export type { TaskDialogState } from './hooks/use-task-dialog';
+export type { TaskDialogState } from './types';

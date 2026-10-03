@@ -2,12 +2,7 @@ import type { ThemeKey } from '@eisenhower/core';
 
 import { useStore } from '../context';
 import type { Store } from '../types';
-
-/** Выбранная тема интерфейса и способ её сменить (docs/specs/35-design-system.md §4). */
-export type Theme = {
-  theme: ThemeKey;
-  selectTheme: (theme: ThemeKey) => void;
-};
+import type { Theme } from '../types';
 
 /**
  * Тема — настройка интерфейса, тем же путём, что и `listSort`: переживает

@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import { createLog } from '@/shared/logger';
-import type { Logger } from '@/shared/logger';
+import type { Logger } from '@/shared/types';
+import type { TaskDialogState } from '../types';
 
 const log: Logger = createLog('ui/task');
-
-export type TaskDialogState = {
-  /** Идентификатор задачи, чьё окно открыто, либо `null`. */
-  openTaskId: string | null;
-  open(id: string): void;
-  close(): void;
-};
 
 /**
  * Какая задача открыта в окне правки (issue #40).

@@ -1,5 +1,5 @@
 import { createLog } from '@/shared/logger';
-import type { Logger } from '@/shared/logger';
+import type { Logger } from '@/shared/types';
 
 /**
  * Логгер слоя хранения (CLAUDE.md §9). Один на слой, а не по одному на модуль:
