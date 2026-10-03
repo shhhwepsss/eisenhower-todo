@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { fileLayoutPlugin } from './eslint.file-layout.js';
 
 /**
  * Общая часть ESLint для всех пакетов монорепозитория. Пакет импортирует её в свой
@@ -40,6 +41,25 @@ const packageBoundaries = {
   },
 };
 
+/**
+ * Раскладка файлов (docs/specs/58-file-layout.md). Входит в baseConfig: новый пакет
+ * получает правило сам, а не когда о нём вспомнили.
+ *
+ * Только src/: тест держит фикстуры и локальные типы рядом с проверкой, а *.d.ts —
+ * объявления окружения, а не типы предметной области.
+ */
+const fileLayout = {
+  files: ['src/**/*.{ts,tsx}'],
+  ignores: ['**/*.d.ts'],
+  plugins: { 'file-layout': fileLayoutPlugin },
+  rules: {
+    'file-layout/file-in-its-folder': 'error',
+    'file-layout/types-live-in-type-files': 'error',
+    'file-layout/type-files-hold-only-types': 'error',
+    'file-layout/constants-live-in-constant-files': 'error',
+  },
+};
+
 export const baseConfig = tseslint.config(
   { ignores: ['dist/**', 'coverage/**'] },
 
@@ -63,6 +83,8 @@ export const baseConfig = tseslint.config(
   },
 
   packageBoundaries,
+
+  fileLayout,
 
   {
     files: ['tests/**/*.{ts,tsx}'],

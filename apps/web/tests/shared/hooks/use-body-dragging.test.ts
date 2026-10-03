@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { RenderHookResult } from '@testing-library/react';
 
 import { useBodyDragging } from '@/shared/hooks/use-body-dragging';
-import type { BodyDragging } from '@/shared/hooks/use-body-dragging';
+import type { BodyDragging } from '@/shared/types';
 
 /**
  * DRAG_CURSOR_GLOBAL (docs/specs/35-design-system.md §5, §Инварианты):

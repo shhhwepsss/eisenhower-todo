@@ -3,6 +3,7 @@ import { isBetween, rankBetween } from './ordering';
 import { normalizeTaskText, normalizeTaskTitle } from './text';
 import { resolvePriorityByZone, resolveZone, resolveZoneByPriority } from './zone';
 import type { Neighbours, Priority, RankRule, Task, TaskStatus, Zone } from './types';
+import type { TaskPatch } from './types/task-patch.type';
 
 /**
  * Мутации задачи — чистые функции «задача + намерение + время → задача».
@@ -23,9 +24,6 @@ import type { Neighbours, Priority, RankRule, Task, TaskStatus, Zone } from './t
  *   задачу. Поэтому повтор действия не двигает `updatedAt` и не выглядит для
  *   будущей синхронизации как правка.
  */
-
-/** Всё, что мутация вправе менять. `id`, `createdAt` и `updatedAt` сюда не входят. */
-type TaskPatch = Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>>;
 
 /** Единственное место, где мутация двигает `updatedAt` (первое значение ставит `createTask`). */
 const touch = (task: Task, patch: TaskPatch, now: string): Task => ({

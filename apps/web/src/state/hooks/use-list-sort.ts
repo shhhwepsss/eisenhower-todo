@@ -2,12 +2,7 @@ import type { ListSortKey } from '@eisenhower/core';
 
 import { useStore } from '../context';
 import type { Store } from '../types';
-
-/** Выбранная сортировка списка и способ её сменить (спека §8). */
-export type ListSort = {
-  listSort: ListSortKey;
-  selectListSort: (key: ListSortKey) => void;
-};
+import type { ListSort } from '../types';
 
 /**
  * Сортировка — настройка интерфейса, а не свойство задачи: она переживает

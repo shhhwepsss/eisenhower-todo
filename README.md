@@ -65,14 +65,14 @@ apps/web/src/ui/app/
   App.module.scss   стили компонента
   children/         только разметка, один уровень вложенности, без логики
   hooks/            состояние и эффекты слайса
-  helpers/          чистые функции слайса
-  constants/        константы слайса
-  types/            по файлу на тип + index.ts
+  lib/              *.lib.ts — чистые функции слайса
+  constants/        *.constant.ts — константы слайса
+  types/            *.type.ts — по файлу на тип + index.ts
 
 packages/core/src/
   index.ts          публичный контракт слоя
-  types/            по файлу на тип + index.ts
-  constants/        QUADRANT_FLAGS и ZONE_MOVES — таблица всех 25 переходов между зонами
+  types/            *.type.ts — по файлу на тип + index.ts
+  constants/        *.constant.ts — QUADRANT_FLAGS и ZONE_MOVES (таблица всех 25 переходов)
   zone.ts           resolveZone / resolvePriority — в какой зоне лежит задача
   list-group.ts     getTasksListGroup — в какой группе списка
   visibility.ts     isTaskLive / isTaskInMatrix — надгробия и done
@@ -83,8 +83,8 @@ packages/core/src/
 
 apps/web/src/storage/
   index.ts          публичный контракт слоя: createRepositories, ошибки, типы
-  types/            порты TaskRepository / SettingsRepository, KeyValueStorage
-  constants/        SCHEMA_VERSION и ключи хранилища
+  types/            *.type.ts — порты TaskRepository / SettingsRepository, KeyValueStorage
+  constants/        *.constant.ts — SCHEMA_VERSION и ключи хранилища
   envelope.ts       конверт { version, ...данные }: вскрыть и запечатать
   guards.ts         проверки формы для данных, пришедших из хранилища
   log.ts            логгер слоя: одна область на всё хранилище
@@ -105,5 +105,5 @@ packages/core/tests/ тесты ядра, окружение node
 ```
 
 Компоненту в `children/` нельзя иметь собственную логику: нужна логика — она
-переезжает в `hooks/` или `helpers/`. Стили — SCSS-модули рядом с компонентом,
+переезжает в `hooks/` или `lib/`. Стили — SCSS-модули рядом с компонентом,
 соглашения по стилям и мемоизации — в [`CLAUDE.md`](CLAUDE.md) §7.

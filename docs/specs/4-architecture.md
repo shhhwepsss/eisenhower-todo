@@ -527,7 +527,7 @@ src/
                actions.ts, selectors.ts
   ui/
     app/       index.ts, App.tsx, App.module.scss, children/, hooks/,
-               helpers/, constants/, types/
+               lib/, constants/, types/
     list/      вкладка «Список»
     matrix/    вкладка «Матрица»
     task/      общие представления задачи
@@ -548,17 +548,18 @@ src/ui/app/
   children/       только разметка, ровно один уровень вложенности;
                   у компонента свой Tabs.module.scss
   hooks/          состояние и эффекты слайса
-  helpers/        чистые функции слайса
-  constants/      константы слайса: tabs.ts (TABS, DEFAULT_TAB) + index.ts
-  types/          по файлу на тип: tab-id.ts, tab-item.ts, tabs.ts,
-                  active-tab.ts + index.ts
+  lib/            чистые функции слайса: *.lib.ts
+  constants/      константы слайса: tabs.constant.ts (TABS, DEFAULT_TAB) + index.ts
+  types/          по файлу на тип: tab-id.type.ts, tab-item.type.ts,
+                  active-tab.type.ts + index.ts
+                  (раскладка и суффиксы — docs/specs/58-file-layout.md)
 ```
 
 - `index.ts` — единственный публичный контракт слайса. Всё остальное приватно.
 - В корне слайса лежит один `.tsx` — сам компонент слайса. Остальные компоненты
   живут в `children/`.
 - **`children/` не содержит логики.** Один уровень вложенности, только представление.
-  Если компоненту нужна логика — она переезжает в `hooks/` или `helpers/`, а не
+  Если компоненту нужна логика — она переезжает в `hooks/` или `lib/`, а не
   остаётся рядом с разметкой.
 - Тесты живут в зеркальном дереве `tests/`, а не рядом с кодом: `src/` содержит
   только продовый код.

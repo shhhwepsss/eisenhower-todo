@@ -1,13 +1,11 @@
-import type { Task, Zone } from '@eisenhower/core';
+import type { Task } from '@eisenhower/core';
 
 import { useStore } from '../context';
-import { tasksInZone } from '../helpers';
+import { tasksInZone } from '../lib';
 import type { Store } from '../types';
 
 import { sortInboxByFreshness } from './use-matrix-tasks';
-
-/** Все пять зон матрицы разом: «Входящие» и четыре квадранта. */
-export type MatrixZones = Record<Zone, Task[]>;
+import type { MatrixZones } from '../types';
 
 /**
  * Вся матрица одной выборкой. Нужна там, где решение принимается не по одной

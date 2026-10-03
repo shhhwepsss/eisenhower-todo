@@ -1,5 +1,5 @@
-export type { TabId } from './tab-id';
-export type { TabItem } from './tab-item';
-export type { TabCounts } from './tab-counts';
-export type { AppMenuProps } from './app-menu';
-export type { ActiveTab } from './active-tab';
+export type { TabId } from './tab-id.type';
+export type { TabItem } from './tab-item.type';
+export type { TabCounts } from './tab-counts.type';
+export type { AppMenuProps } from './app-menu.type';
+export type { ActiveTab } from './active-tab.type';

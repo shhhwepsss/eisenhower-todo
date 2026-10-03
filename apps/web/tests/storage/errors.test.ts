@@ -1,5 +1,5 @@
 import { describeError } from '@/shared/errors';
-import type { LogPayload } from '@/shared/logger';
+import type { LogPayload } from '@/shared/types';
 import { isStorageError, storageError } from '@/storage';
 import type { StorageError } from '@/storage';
 

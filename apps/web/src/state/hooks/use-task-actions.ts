@@ -2,7 +2,7 @@ import { resolveZone, resolveZoneByPriority } from '@eisenhower/core';
 import type { Neighbours, Priority, Task, TaskStatus, Zone } from '@eisenhower/core';
 
 import { useStore } from '../context';
-import { createId, endOfZone, now } from '../helpers';
+import { createId, endOfZone, now } from '../lib';
 import type { Store, TaskActions } from '../types';
 
 /**

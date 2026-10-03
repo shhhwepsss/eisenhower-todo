@@ -1,8 +1,8 @@
 import { createTask } from '@eisenhower/core';
 import type { Task } from '@eisenhower/core';
 import type { MatrixZones } from '@/state';
-import { resolveDrop, zoneDroppableId } from '@/ui/matrix/helpers';
-import type { DropTarget } from '@/ui/matrix/helpers';
+import { resolveDrop, zoneDroppableId } from '@/ui/matrix/lib';
+import type { DropTarget } from '@/ui/matrix/types';
 
 /**
  * Куда попадёт брошенная задача. Функция чистая, поэтому проверяется вызовом:

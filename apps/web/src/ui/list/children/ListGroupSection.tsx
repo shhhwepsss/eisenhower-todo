@@ -1,14 +1,8 @@
 import type { Task } from '@eisenhower/core';
 import { useListGroup } from '@/state';
 import { TaskRow } from '@/ui/task';
-import type { GroupMeta } from '../constants';
 import styles from './ListGroupSection.module.scss';
-
-type ListGroupSectionProps = {
-  meta: GroupMeta;
-  /** Клик по строке — открыть окно правки её задачи (issue #40). */
-  onOpen: (id: string) => void;
-};
+import type { ListGroupSectionProps } from '../types';
 
 /**
  * Одна группа списка. Выборку группа читает сама — тогда добавление группы это

@@ -2,7 +2,7 @@ import { getTasksListGroup, isTaskLive } from '@eisenhower/core';
 import type { ListGroup, Task } from '@eisenhower/core';
 
 import { useStore } from '../context';
-import { sortForList } from '../helpers';
+import { sortForList } from '../lib';
 import type { Store } from '../types';
 
 /**

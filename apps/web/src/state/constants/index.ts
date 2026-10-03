@@ -1,1 +1,1 @@
-export { INITIAL_APP_STATE } from './initial-state';
+export { INITIAL_APP_STATE } from './initial-state.constant';

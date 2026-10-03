@@ -3,20 +3,15 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { describeError } from '@/shared/errors';
 import { createLog, getLogLevel } from '@/shared/logger';
-import type { LogPayload, Logger } from '@/shared/logger';
+import type { LogPayload, Logger } from '@/shared/types';
 import { AppStateProvider } from '@/state';
 import { createRepositories } from '@/storage';
 import type { Repositories } from '@/storage';
 import { App } from '@/ui/app';
 import '@/styles/global.scss';
+import type { RenderErrorInfo } from './types/render-error-info.type';
 
 const log: Logger = createLog('main');
-
-/**
- * Общая часть трёх колбэков React: у них разные типы второго аргумента, и роднит
- * их ровно `componentStack` — цепочка компонентов до места падения.
- */
-type RenderErrorInfo = { componentStack?: string | undefined };
 
 const describeRenderFailure = (error: unknown, info: RenderErrorInfo): LogPayload => {
   const failure: LogPayload = describeError(error);
