@@ -1,11 +1,13 @@
 import type { DatabaseCheck } from '../../types';
+import { toHealthReport } from './mappers/health-report.mapper';
 import type { DatabaseHealthService } from './services/database-health.service';
 import type { HealthReport } from './types';
 
 /**
  * Сценарий «проверить здоровье»: версия сборки и состояние базы
  * (docs/specs/60-api-modules.md). Об HTTP и Hono не знает — отдаёт `HealthReport`, а код
- * ответа и тело выбирает контроллер.
+ * ответа и тело выбирает контроллер. Форму `HealthReport` собирает маппер, а не сценарий
+ * (CLAUDE.md §8).
  *
  * Сбой базы — значение, а не исключение, и лог здесь не пишется: его пишет тот, кто
  * отвечает на запрос (CLAUDE.md §9).
@@ -21,7 +23,6 @@ export class CheckHealthUseCase {
 
   public async execute(): Promise<HealthReport> {
     const check: DatabaseCheck = await this.databaseHealth.check();
-    if (check.ok) return { healthy: true, version: this.version };
-    return { healthy: false, version: this.version, reason: check.reason, cause: check.cause };
+    return toHealthReport(check, this.version);
   }
 }

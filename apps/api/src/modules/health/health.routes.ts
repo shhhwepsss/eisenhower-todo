@@ -10,9 +10,9 @@ import type { HealthController } from './health.controller';
  * Окружение на запросе уже разобрано: его кладёт `requireEnv` (ENV_FAILS_FAST).
  */
 export const registerHealthRoutes = (app: Hono<AppEnv>, deps: AppDeps): void => {
-  app.get('/health', (c: Context<AppEnv>): Promise<Response> => {
-    const env: Env = c.get('env');
+  app.get('/health', (context: Context<AppEnv>): Promise<Response> => {
+    const env: Env = context.get('env');
     const controller: HealthController = composeHealthController(deps, env);
-    return controller.check(c);
+    return controller.check(context);
   });
 };

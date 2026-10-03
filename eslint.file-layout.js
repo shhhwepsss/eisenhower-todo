@@ -1,8 +1,8 @@
 import { basename, dirname } from 'node:path';
 
 /**
- * Раскладка файлов (docs/specs/58-file-layout.md): типы, константы, lib-модули и
- * сервисы лежат каждый в своей папке, и вид файла читается из суффикса имени.
+ * Раскладка файлов (docs/specs/58-file-layout.md): типы, константы, lib-модули,
+ * сервисы и мапперы лежат каждый в своей папке, и вид файла читается из суффикса имени.
  *
  * Локальный плагин без зависимостей: готовые плагины проверяют имя и папку, но не
  * объявления внутри файла — а без этого папки были бы, а типы жили бы где попало.
@@ -12,13 +12,14 @@ const FOLDER_BY_KIND = {
   constant: 'constants',
   lib: 'lib',
   service: 'services',
+  mapper: 'mappers',
 };
 
 const KIND_BY_FOLDER = Object.fromEntries(
   Object.entries(FOLDER_BY_KIND).map(([kind, folder]) => [folder, kind]),
 );
 
-const SUFFIXED_FILE = /\.(type|constant|lib|service)\.tsx?$/;
+const SUFFIXED_FILE = /\.(type|constant|lib|service|mapper)\.tsx?$/;
 
 const INDEX_FILE = /^index\.tsx?$/;
 

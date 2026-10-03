@@ -22,6 +22,8 @@ const CONSTANTS_LIVE_IN_CONSTANT_FILES: string = 'file-layout/constants-live-in-
 
 const TYPE_CODE: string = "export type Fixture = 'a' | 'b';\n";
 
+const MAPPER_CODE: string = 'export const toFixture = (value: number): string => `${value}`;\n';
+
 describe('FILE_IN_ITS_FOLDER', () => {
   it('запрещает файл без суффикса в types/', async () => {
     const messages: Linter.LintMessage[] = await lintAs('src/types/fixture.ts', TYPE_CODE);
@@ -42,10 +44,10 @@ describe('FILE_IN_ITS_FOLDER', () => {
   });
 
   it('запрещает файл без суффикса в lib/ и services/', async () => {
-    const libMessages: Linter.LintMessage[] = await lintAs('src/lib/fixture.ts', 'export const a = 1;\n');
+    const libMessages: Linter.LintMessage[] = await lintAs('src/lib/fixture.ts', 'export const fixture = 1;\n');
     const serviceMessages: Linter.LintMessage[] = await lintAs(
       'src/services/fixture.ts',
-      'export const a = 1;\n',
+      'export const fixture = 1;\n',
     );
 
     expect(ruleIds(libMessages)).toContain(FILE_IN_ITS_FOLDER);
@@ -60,6 +62,44 @@ describe('FILE_IN_ITS_FOLDER', () => {
     );
 
     expect(ruleIds(typeMessages)).not.toContain(FILE_IN_ITS_FOLDER);
+    expect(ruleIds(indexMessages)).not.toContain(FILE_IN_ITS_FOLDER);
+  });
+
+  it('запрещает *.mapper.ts вне mappers/', async () => {
+    const besideMessages: Linter.LintMessage[] = await lintAs(
+      'src/modules/health/fixture.mapper.ts',
+      MAPPER_CODE,
+    );
+    const libMessages: Linter.LintMessage[] = await lintAs('src/lib/fixture.mapper.ts', MAPPER_CODE);
+
+    expect(ruleIds(besideMessages)).toContain(FILE_IN_ITS_FOLDER);
+    expect(ruleIds(libMessages)).toContain(FILE_IN_ITS_FOLDER);
+  });
+
+  it('запрещает файл без суффикса и вложенную папку в mappers/', async () => {
+    const bareMessages: Linter.LintMessage[] = await lintAs('src/mappers/fixture.ts', MAPPER_CODE);
+    const nestedMessages: Linter.LintMessage[] = await lintAs(
+      'src/mappers/nested/fixture.mapper.ts',
+      MAPPER_CODE,
+    );
+
+    expect(ruleIds(bareMessages)).toContain(FILE_IN_ITS_FOLDER);
+    expect(ruleIds(nestedMessages)).toContain(FILE_IN_ITS_FOLDER);
+  });
+
+  it('разрешает *.mapper.ts в mappers/ — в корне src и в папке модуля — и index.ts', async () => {
+    const rootMessages: Linter.LintMessage[] = await lintAs('src/mappers/fixture.mapper.ts', MAPPER_CODE);
+    const moduleMessages: Linter.LintMessage[] = await lintAs(
+      'src/modules/health/mappers/fixture.mapper.ts',
+      MAPPER_CODE,
+    );
+    const indexMessages: Linter.LintMessage[] = await lintAs(
+      'src/mappers/index.ts',
+      "export { toFixture } from './fixture.mapper';\n",
+    );
+
+    expect(ruleIds(rootMessages)).not.toContain(FILE_IN_ITS_FOLDER);
+    expect(ruleIds(moduleMessages)).not.toContain(FILE_IN_ITS_FOLDER);
     expect(ruleIds(indexMessages)).not.toContain(FILE_IN_ITS_FOLDER);
   });
 });

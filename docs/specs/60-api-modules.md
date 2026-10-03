@@ -17,8 +17,10 @@
 `docs/specs/50-api-skeleton.md`: сущности API — классы; DTO и маппер на каждой границе;
 между запросами в памяти ничего не держим.
 
-Всё ниже — **предложение агента, не подтверждено человеком**. `system-architect` не
-привлекался.
+Мапперы — отдельные файлы, а не метод контроллера: **человек, 2026-10-03**.
+
+Всё остальное ниже — **предложение агента, не подтверждено человеком**.
+`system-architect` не привлекался.
 
 ### Раскладка
 
@@ -35,6 +37,7 @@ apps/api/src/
     <имя>.controller.ts       HTTP-граница
     <сценарий>.use-case.ts    сценарий, без HTTP
     services/*.service.ts     сервисы приложения
+    mappers/*.mapper.ts       мапперы границ: чистые функции, по одной на файл
     types/*.type.ts           DTO модуля
   db/                         внешняя интеграция (не менялась)
   types/, constants/, lib/    общее для приложения
@@ -42,11 +45,11 @@ apps/api/src/
 
 - **Модуль — папка `src/modules/<имя>/`, слои — файлы с суффиксом.** Суффиксы
   `*.routes.ts`, `*.composition.ts`, `*.controller.ts`, `*.use-case.ts`,
-  `*.middleware.ts`, `*.responder.ts` новые; `*.service.ts` и `*.type.ts` — из
-  `docs/specs/58-file-layout.md`, и его правило вложенные `services/` и `types/` уже
-  принимает (проверяется только имя ближайшей папки, `eslint.file-layout.js`).
+  `*.middleware.ts`, `*.responder.ts` новые; `*.service.ts`, `*.type.ts` и `*.mapper.ts`
+  — из `docs/specs/58-file-layout.md`, и его правило вложенные `services/`, `types/` и
+  `mappers/` принимает (проверяется только имя ближайшей папки, `eslint.file-layout.js`).
   *Цена:* шесть суффиксов держит только ревью — правило раскладки о них не знает, и
-  `CLAUDE.md` §8 их не описывает (файл в этой задаче не трогался).
+  `CLAUDE.md` §8 их не описывает (в этой задаче туда дописаны только мапперы).
 - **Слои health:** `NeonDatabaseProbe` (интеграция, за интерфейсом `DatabaseProbe`) →
   `DatabaseHealthService` → `CheckHealthUseCase` → `HealthController`.
   *Цена:* `DatabaseHealthService` сегодня — сквозной вызов `probe.check()`, своей логики
@@ -54,12 +57,34 @@ apps/api/src/
   когда проверок станет больше одной. Альтернатива — use-case зависит от `DatabaseProbe`
   напрямую, минус один файл.
 - **DTO на границах:** база → `DatabaseCheck` (уже был) → use-case отдаёт `HealthReport`
-  → контроллер маппит в `HealthBody`. Маппер — приватный метод контроллера `toBody`.
-  `HealthReport` несёт `cause` для лога, `HealthBody` — нет: текст ошибки базы в ответ
-  не попадает по типу, а не по внимательности. *Цена:* у сервиса своего DTO нет, он
-  возвращает `DatabaseCheck` интеграции — «DTO на каждой границе» здесь соблюдено не
-  буквально. Отдельный файл-маппер появится в #46, когда маппер перестанет быть одной
-  строкой.
+  → контроллер отдаёт `HealthBody`. `HealthReport` несёт `cause` для лога, `HealthBody`
+  — нет: текст ошибки базы в ответ не попадает по типу, а не по внимательности.
+- **Мапперы — отдельные файлы** (человек, 2026-10-03; заменяет прежнее решение агента
+  «маппер — приватный метод контроллера `toBody`, файл появится в #46»). Правило — в
+  `CLAUDE.md` §8 «Мапперы». Подпункты ниже — **предложение агента, не подтверждено
+  человеком**:
+  - **Место и имя:** `modules/<имя>/mappers/<целевая-форма>.mapper.ts`, функция
+    `to<Форма>`, одна на файл, чистая стрелочная. В health их две:
+    `health-report.mapper.ts` — `toHealthReport(check, version)`, граница «интеграция →
+    use-case»; `health-body.mapper.ts` — `toHealthBody(report)`, граница «use-case →
+    HTTP». Use-case и контроллер формы сами не собирают. *Цена:* два файла по две
+    строки логики и два импорта ради одной ручки; у `mappers/` нет `index.ts` —
+    маппер импортируется по имени файла.
+  - **Папку и суффикс держит общий плагин раскладки** (`eslint.file-layout.js`, вид
+    `mapper`), а не правило API. *Цена:* имена `mappers/` и `*.mapper.ts` заняты во всех
+    пакетах. Чистоту маппера и «один на файл» линтер не проверяет — только ревью;
+    импорт Hono в маппере запрещён уже существующим `HTTP_STAYS_AT_EDGE`.
+  - **Код ответа выбирает контроллер, не маппер.** `200` или `500` — решение
+    HTTP-границы, и оно стоит рядом с записью в лог. *Цена:* условие `report.healthy`
+    читается дважды — в маппере (статус) и в контроллере (код).
+  - **`toHealthReport` принимает версию вторым аргументом.** Версия — не данные базы,
+    её знает use-case. *Цена:* маппер с двумя входами; альтернатива — маппер отдаёт
+    отчёт без версии, а use-case её дописывает, то есть снова собирает форму на месте.
+  - **У сервиса своего DTO по-прежнему нет:** `DatabaseHealthService` возвращает
+    `DatabaseCheck` интеграции как есть, и граница «интеграция → сервис» маппера не
+    имеет. *Цена:* «DTO и маппер на каждой границе» (#50) соблюдено на двух границах из
+    трёх. Третий маппер сегодня был бы тождественным `DatabaseCheck → DatabaseCheck` под
+    другим именем; он появится вместе с собственной логикой сервиса.
 - **`HealthBody` переехал в модуль** (`modules/health/types/`), `ErrorBody` остался в
   общих `src/types/`: тело ошибки общее для всех ручек.
 
@@ -115,10 +140,12 @@ apps/api/src/
 
 **In**
 
-- Модуль `health`: маршруты, сборка, контроллер, use-case, сервис, типы.
+- Модуль `health`: маршруты, сборка, контроллер, use-case, сервис, мапперы, типы.
 - `src/http/`: `requireEnv`, ответы 404 и 500.
 - `create-app.ts` — только сборка; `TODO(#60)` снят.
 - Правила линта `HTTP_STAYS_AT_EDGE` и `MODULE_HAS_ONE_ENTRY` с тестами.
+- Вид `mapper` в общем плагине раскладки (`docs/specs/58-file-layout.md`) с тестами;
+  правило о мапперах в `CLAUDE.md` §8.
 - Тесты: слои ниже контроллера без Hono; поведение, которое раньше не было закреплено
   (исключение в проверке базы, метод кроме `GET`, область лога).
 
@@ -129,7 +156,8 @@ apps/api/src/
 - Контейнер зависимостей, декораторы, общий `Result<T, E>` — не делаем.
 - Правило линта на суффиксы слоёв (`*.controller.ts` только в модуле и т. п.) — не
   делаем, пока модуль один.
-- `apps/api/src/db/**`, миграции, `netlify.toml`, `CLAUDE.md` — не трогаются.
+- `apps/api/src/db/**`, миграции, `netlify.toml` — не трогаются. В `CLAUDE.md`
+  дописаны только мапперы; шесть суффиксов слоёв там по-прежнему не описаны.
 
 **Допущения**
 
@@ -147,6 +175,11 @@ apps/api/src/
   `apps/api/tests/module-boundaries.test.ts`.
 - `MODULE_HAS_ONE_ENTRY`: файл вне `src/modules/<имя>/` импортирует из модуля только его
   `*.routes.ts`; один модуль не импортирует другой. Линт + тот же тест.
+- `MAPPER_AT_EACH_BOUNDARY`: форму `HealthReport` собирает только `toHealthReport`, форму
+  `HealthBody` — только `toHealthBody`; оба — чистые функции в
+  `modules/health/mappers/*.mapper.ts`, и `cause` в `HealthBody` не попадает. Тест —
+  `apps/api/tests/health-mappers.test.ts`; место файла — линт (`FILE_IN_ITS_FOLDER`,
+  `packages/core/tests/file-layout.test.ts`). «Только маппер» линтом не держится — ревью.
 - Сохраняются инварианты #50 и #51: `ENV_FAILS_FAST`, `DATABASE_FAILURE_IS_REPORTED`,
   `SCHEMA_MATCHES_CODE`, `MIGRATIONS_STAY_OUT_OF_FUNCTION`, `DB_BEHIND_INTERFACE`,
   `ONE_ORIGIN`, `API_IGNORES_NETLIFY_CONTEXT`, `FUNCTION_IS_SELF_CONTAINED`.
@@ -164,6 +197,12 @@ apps/api/src/
   модуля не собираются (`createDatabaseProbe` не вызван).
 - [x] Given use-case с подставной проверкой, без Hono When `execute()` Then `HealthReport`
   с версией; при сбое — причина и исходная ошибка, лог не пишется.
+- [x] Given `DatabaseCheck` When `toHealthReport(check, version)` Then `HealthReport` с
+  версией; при сбое — причина и исходная ошибка, поля `ok` нет.
+- [x] Given `HealthReport` со сбоем и `cause` When `toHealthBody(report)` Then в теле
+  ровно `status` и `version`: ни поля `cause`, ни текста ошибки.
+- [x] Given `*.mapper.ts` вне `mappers/` или файл без суффикса в `mappers/` Then lint
+  красный; Given импорт `hono` в маппере Then lint красный.
 - [x] Идемпотентность: Given два запроса `GET /api/health` подряд Then база проверяется
   оба раза — ни сервис, ни use-case ничего не помнят.
 - [x] Given импорт `hono` в use-case, сервисе, сборке модуля, `lib/` или `src/db/` Then

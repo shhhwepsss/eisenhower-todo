@@ -12,18 +12,18 @@ const log: Logger = createLog('api/app');
  * Неизвестный путь под `/api` — JSON, а не HTML фронта: клиент API разбирает ответ
  * одинаково для любой ошибки.
  */
-export const respondNotFound = (c: Context<AppEnv>): Response => {
-  log.debug('нет такой ручки', { method: c.req.method, path: c.req.path });
+export const respondNotFound = (context: Context<AppEnv>): Response => {
+  log.debug('нет такой ручки', { method: context.req.method, path: context.req.path });
   const body: ErrorBody = { error: 'not_found' };
-  return c.json(body, 404);
+  return context.json(body, 404);
 };
 
 /**
  * Необработанное исключение. Лог пишется здесь, потому что здесь ошибка и
  * обработана (CLAUDE.md §9); наружу уходит только код, без стека и сообщения.
  */
-export const respondInternalError = (error: Error, c: Context<AppEnv>): Response => {
-  log.error('ручка упала', { method: c.req.method, path: c.req.path, error });
+export const respondInternalError = (error: Error, context: Context<AppEnv>): Response => {
+  log.error('ручка упала', { method: context.req.method, path: context.req.path, error });
   const body: ErrorBody = { error: 'internal' };
-  return c.json(body, 500);
+  return context.json(body, 500);
 };

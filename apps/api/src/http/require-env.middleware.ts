@@ -10,13 +10,13 @@ const log: Logger = createLog('api/app');
  * неразобранным окружением. В лог уходят имена переменных, наружу — общий `internal`:
  * какие переменные у сервера есть, клиенту знать незачем.
  */
-export const requireEnv = async (c: Context<AppEnv>, next: Next): Promise<Response | void> => {
+export const requireEnv = async (context: Context<AppEnv>, next: Next): Promise<Response | void> => {
   const result: EnvResult = readEnv();
   if (result.ok) {
-    c.set('env', result.env);
+    context.set('env', result.env);
     return next();
   }
   log.error('окружение не разобрано', { variables: result.variables });
   const body: ErrorBody = { error: 'internal' };
-  return c.json(body, 500);
+  return context.json(body, 500);
 };

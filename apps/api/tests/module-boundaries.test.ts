@@ -26,7 +26,7 @@ const MODULE_HAS_ONE_ENTRY: string = 'module-boundaries/module-has-one-entry';
 const HONO_CODE: string = "import { Hono } from 'hono';\nexport const create = (): Hono => new Hono();\n";
 
 const HONO_TYPE_CODE: string =
-  "import type { Context } from 'hono';\nexport const pathOf = (c: Context): string => c.req.path;\n";
+  "import type { Context } from 'hono';\nexport const pathOf = (context: Context): string => context.req.path;\n";
 
 const HONO_SUBPATH_CODE: string =
   "import { getCookie } from 'hono/cookie';\nexport const read = getCookie;\n";
@@ -60,6 +60,15 @@ describe('HTTP_STAYS_AT_EDGE', () => {
   it('запрещает Hono в сборке модуля', async () => {
     const messages: Linter.LintMessage[] = await lintAs(
       'src/modules/health/health.composition.ts',
+      HONO_TYPE_CODE,
+    );
+
+    expect(ruleIds(messages)).toContain(RESTRICTED_IMPORTS);
+  });
+
+  it('запрещает Hono в маппере модуля — даже на границе с HTTP', async () => {
+    const messages: Linter.LintMessage[] = await lintAs(
+      'src/modules/health/mappers/fixture.mapper.ts',
       HONO_TYPE_CODE,
     );
 
