@@ -12,7 +12,8 @@
     "dev:api": "npm run dev --workspace=@eisenhower/api",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=@eisenhower/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
