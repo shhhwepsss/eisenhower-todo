@@ -17,16 +17,6 @@ const createProbe = (check: DatabaseCheck): DatabaseProbe => {
   return { check: async () => check };
 };
 
-const UNAVAILABLE: DatabaseCheck = { ok: false, cause: new Error(DATABASE_ERROR) };
-
-const TTL_MS: number = 60_000;
-
-/** Проверка, которая отдаёт заданные результаты по очереди и считает обращения. */
-const createCountingApp = (checks: DatabaseCheck[]): { app: Hono<AppEnv>; check: () => Promise<DatabaseCheck> } => {
-  const check: () => Promise<DatabaseCheck> = vi.fn(async () => checks.shift() ?? HEALTHY);
-  const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }) });
-  return { app, check };
-};
 
 const createTestApp = (check: DatabaseCheck): Hono<AppEnv> => {
   return createApp({ createDatabaseProbe: () => createProbe(check) });
@@ -46,7 +36,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
-  vi.useRealTimers();
   forgetEnv();
 });
 
@@ -72,7 +61,7 @@ describe('API', () => {
 
   it('DATABASE_FAILURE_IS_REPORTED: база отказала — 500 без текста ошибки, ошибка в логе', async () => {
     const cause: Error = new Error(DATABASE_ERROR);
-    const app: Hono<AppEnv> = createTestApp({ ok: false, cause });
+    const app: Hono<AppEnv> = createTestApp({ ok: false, reason: 'database_unavailable', cause });
     const consoleError: ReturnType<typeof vi.spyOn> = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const response: Response = await requestApi(app, '/api/health');
@@ -83,46 +72,77 @@ describe('API', () => {
     expect(body).toEqual({ status: 'database_unavailable', version: 'dev' });
     expect(text).not.toContain('app_meta');
     expect(consoleError).toHaveBeenCalledWith(
-      expect.stringContaining('база недоступна или схема не применена'),
-      { error: cause },
+      expect.stringContaining('проверка базы не прошла'),
+      { reason: 'database_unavailable', error: cause },
     );
   });
 
-  it('DATABASE_CHECK_IS_CACHED: пока срок не вышел, повторный запрос в базу не ходит', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    const { app, check } = createCountingApp([HEALTHY, HEALTHY]);
-
-    await requestApi(app, '/api/health');
-    vi.advanceTimersByTime(TTL_MS - 1);
-    const response: Response = await requestApi(app, '/api/health');
-
-    expect(response.status).toBe(200);
-    expect(check).toHaveBeenCalledTimes(1);
-  });
-
-  it('DATABASE_CHECK_IS_CACHED: срок вышел — база проверяется заново', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    const { app, check } = createCountingApp([HEALTHY, UNAVAILABLE]);
+  it('SCHEMA_MATCHES_CODE: в базе нет миграций кода — 500 со статусом schema_behind', async () => {
+    const cause: Error = new Error('в журнале базы нет 1 из 2 миграций кода');
+    const app: Hono<AppEnv> = createTestApp({ ok: false, reason: 'schema_behind', cause });
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await requestApi(app, '/api/health');
-    vi.advanceTimersByTime(TTL_MS);
     const response: Response = await requestApi(app, '/api/health');
+    const body: unknown = await response.json();
 
     expect(response.status).toBe(500);
+    expect(body).toEqual({ status: 'schema_behind', version: 'dev' });
+  });
+
+  it('проверка идёт на каждом запросе: результат не запоминается', async () => {
+    const check: () => Promise<DatabaseCheck> = vi.fn(async () => HEALTHY);
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }) });
+
+    await requestApi(app, '/api/health');
+    await requestApi(app, '/api/health');
+
     expect(check).toHaveBeenCalledTimes(2);
   });
 
-  it('DATABASE_CHECK_IS_CACHED: сбой не запоминается — база вернулась, и это видно сразу', async () => {
-    const { app, check } = createCountingApp([UNAVAILABLE, HEALTHY]);
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('BEHAVIOR_PRESERVED: сбой базы пишет лог областью api/health, один раз', async () => {
+    const cause: Error = new Error(DATABASE_ERROR);
+    const app: Hono<AppEnv> = createTestApp({ ok: false, reason: 'schema_behind', cause });
+    const consoleError: ReturnType<typeof vi.spyOn> = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const failed: Response = await requestApi(app, '/api/health');
-    const recovered: Response = await requestApi(app, '/api/health');
+    await requestApi(app, '/api/health');
 
-    expect(failed.status).toBe(500);
-    expect(recovered.status).toBe(200);
-    expect(check).toHaveBeenCalledTimes(2);
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('[error] [api/health] проверка базы не прошла'),
+      { reason: 'schema_behind', error: cause },
+    );
+  });
+
+  it('BEHAVIOR_PRESERVED: проверка базы бросила исключение — 500 internal, ошибка в логе', async () => {
+    const cause: Error = new Error(DATABASE_ERROR);
+    const check: () => Promise<DatabaseCheck> = async () => {
+      throw cause;
+    };
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }) });
+    const consoleError: ReturnType<typeof vi.spyOn> = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response: Response = await requestApi(app, '/api/health');
+    const text: string = await response.text();
+    const body: unknown = JSON.parse(text);
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: 'internal' });
+    expect(text).not.toContain('app_meta');
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('[error] [api/app] ручка упала'),
+      { method: 'GET', path: '/api/health', error: cause },
+    );
+  });
+
+  it('BEHAVIOR_PRESERVED: POST на /api/health — 404, ручка только GET', async () => {
+    const app: Hono<AppEnv> = createTestApp(HEALTHY);
+    const request: Request = new Request('http://localhost/api/health', { method: 'POST' });
+
+    const response: Response = await app.fetch(request);
+    const body: unknown = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body).toEqual({ error: 'not_found' });
   });
 
   it('неизвестный путь под /api — 404 в JSON, а не HTML', async () => {

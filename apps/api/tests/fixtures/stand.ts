@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '@neondatabase/serverless';
 import { MIGRATION_LOCK_KEY } from '../../src/db/constants/migration-lock.constant';
-import { STAND_HOST } from '../../src/db/constants/neon-stand.constant';
-import { configureNeonFor } from '../../src/db/neon-stand';
+import { STAND_HOST } from '../../src/db/neon/constants/neon-stand.constant';
+import { configureNeonFor } from '../../src/db/neon/neon-stand';
 
 /**
  * Стенд базы для интеграционных тестов (docs/specs/51-db-migrations.md). Тесты смотрят в

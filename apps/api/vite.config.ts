@@ -1,5 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { getRequestListener } from '@hono/node-server';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
+import type { MigrationMeta } from 'drizzle-orm/migrator';
 import { loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -13,6 +16,23 @@ type NodeListener = (incoming: IncomingMessage, outgoing: ServerResponse) => Pro
  * окружении сборки), локально — `dev`.
  */
 const BUILD_VERSION: string = process.env.COMMIT_REF ?? 'dev';
+
+/**
+ * Хеши миграций из `drizzle/` (docs/specs/51-db-migrations.md, SCHEMA_MATCHES_CODE).
+ * Читает их тот же `readMigrationFiles`, что и migrator drizzle, — хеш в сборке и хеш в
+ * журнале базы считаются одним кодом. В функцию едут только хеши: по ним `/api/health`
+ * сверяет код с журналом, а сами файлы миграций остаются в репозитории.
+ *
+ * Читаются при старте Vite: после `npm run db:generate` dev-сервер нужно перезапустить.
+ */
+const readMigrationHashes = (): string[] => {
+  const folderUrl: URL = new URL('./drizzle', import.meta.url);
+  const migrationsFolder: string = fileURLToPath(folderUrl);
+  const migrations: MigrationMeta[] = readMigrationFiles({ migrationsFolder });
+  return migrations.map((migration) => migration.hash);
+};
+
+const MIGRATION_HASHES: string[] = readMigrationHashes();
 
 /**
  * Dev-сервер API (docs/specs/50-api-skeleton.md, «Разработка»). Каждый запрос
@@ -63,6 +83,7 @@ export default defineConfig({
   appType: 'custom',
   define: {
     __BUILD_VERSION__: JSON.stringify(BUILD_VERSION),
+    __MIGRATION_HASHES__: JSON.stringify(MIGRATION_HASHES),
   },
   server: {
     // Явный IPv4 — по той же причине, что в apps/web/vite.config.ts.

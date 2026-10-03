@@ -7,7 +7,7 @@
 # Адрес базы для тестов и скрипта миграций:
 #   postgres://postgres:postgres@db.localtest.me:5432/main
 # `db.localtest.me` резолвится в 127.0.0.1; по этому имени код понимает, что перед ним
-# стенд, и ходит на порт прокси 4444 без TLS (apps/api/src/db/neon-stand.ts).
+# стенд, и ходит на порт прокси 4444 без TLS (apps/api/src/db/neon/neon-stand.ts).
 #
 # Тот же файл поднимает CI (.github/workflows/ci.yml).
 name: eisenhower-stand

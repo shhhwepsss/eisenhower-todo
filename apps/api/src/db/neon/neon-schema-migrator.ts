@@ -5,8 +5,8 @@ import type { MigrationMeta } from 'drizzle-orm/migrator';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { migrate } from 'drizzle-orm/neon-serverless/migrator';
-import type { SchemaMigrator } from '../types';
-import { MIGRATION_LOCK_KEY, MIGRATION_LOCK_TIMEOUT_MS } from './constants/migration-lock.constant';
+import type { SchemaMigrator } from '../../types';
+import { MIGRATION_LOCK_KEY, MIGRATION_LOCK_TIMEOUT_MS } from '../constants/migration-lock.constant';
 import { NEON_POOLER_MARKER } from './constants/neon-pooler.constant';
 import { configureNeonFor } from './neon-stand';
 
@@ -21,7 +21,7 @@ import { configureNeonFor } from './neon-stand';
  * Блокировка сессионная и явно не снимается: её отпускает закрытие соединения — в том
  * числе когда прогон упал или соединение оборвалось.
  */
-export class DrizzleSchemaMigrator implements SchemaMigrator {
+export class NeonSchemaMigrator implements SchemaMigrator {
   private readonly databaseUrl: string;
   private readonly migrationsFolder: string;
 

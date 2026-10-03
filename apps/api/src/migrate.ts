@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
-import { DrizzleSchemaMigrator } from './db/drizzle-schema-migrator';
+import { NeonSchemaMigrator } from './db/neon/neon-schema-migrator';
 import { readEnv } from './lib/env.lib';
-import { createLog, setLogLevel } from './logger';
+import { createLog } from './logger';
 import type { EnvResult, Logger, SchemaMigrator } from './types';
 
 /**
@@ -16,8 +16,6 @@ import type { EnvResult, Logger, SchemaMigrator } from './types';
 const log: Logger = createLog('api/migrate');
 
 export const runMigrations = async (): Promise<boolean> => {
-  // Команду запускают, чтобы увидеть её результат: порог прода (`warn`) скрыл бы успех.
-  setLogLevel('info');
   const result: EnvResult = readEnv();
   if (!result.ok) {
     log.error('окружение не разобрано', { variables: result.variables });
@@ -25,7 +23,7 @@ export const runMigrations = async (): Promise<boolean> => {
   }
   const folderUrl: URL = new URL('../drizzle', import.meta.url);
   const migrationsFolder: string = fileURLToPath(folderUrl);
-  const migrator: SchemaMigrator = new DrizzleSchemaMigrator(result.env.DATABASE_URL, migrationsFolder);
+  const migrator: SchemaMigrator = new NeonSchemaMigrator(result.env.DATABASE_URL, migrationsFolder);
   try {
     await migrator.migrate();
   } catch (error) {

@@ -3,8 +3,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DrizzleSchemaMigrator } from '../src/db/drizzle-schema-migrator';
-import { NeonDatabaseProbe } from '../src/db/neon-database-probe';
+import { MIGRATION_HASHES } from '../src/constants/migration-hashes.constant';
+import { NeonSchemaMigrator } from '../src/db/neon/neon-schema-migrator';
+import { NeonDatabaseProbe } from '../src/db/neon/neon-database-probe';
 import type { DatabaseCheck, DatabaseProbe, SchemaMigrator } from '../src/types';
 import {
   MIGRATIONS_FOLDER,
@@ -32,6 +33,9 @@ const API_URL: URL = new URL('..', import.meta.url);
 const API_ROOT: string = fileURLToPath(API_URL);
 
 const FIRST_TAG: string = '0000_app_meta';
+
+/** Хеш миграции, которой в базе заведомо нет. */
+const UNKNOWN_HASH: string = 'f'.repeat(64);
 
 const POOLED_URL: string = 'postgresql://user:secret@ep-test-pooler.eu-central-1.aws.neon.tech/neondb';
 
@@ -82,7 +86,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('пустая база: миграции применены', async () => {
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
 
     await migrator.migrate();
     const journal: Row[] = await readJournal();
@@ -93,7 +97,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('MIGRATIONS_ARE_IDEMPOTENT: повторный прогон не меняет журнал', async () => {
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await migrator.migrate();
     const before: Row[] = await readJournal();
 
@@ -104,8 +108,8 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('MIGRATION_IS_SERIALIZED: два параллельных прогона применяют миграцию один раз', async () => {
-    const first: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
-    const second: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const first: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const second: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
 
     await Promise.all([first.migrate(), second.migrate()]);
     const journal: Row[] = await readJournal();
@@ -114,7 +118,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('MIGRATION_IS_SERIALIZED: пока блокировка занята, прогон ждёт и ничего не применяет', async () => {
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     const release: () => Promise<void> = await holdMigrationLock();
     let finished: boolean = false;
 
@@ -134,11 +138,11 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('NO_MIGRATION_IS_SKIPPED: миграция с меткой времени старше применённой — прогон падает', async () => {
-    const applied: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const applied: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await applied.migrate();
     await copyMigrations(tempDir);
     await addMigration(tempDir, '0001_late', FIXED_SQL, 1);
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, tempDir);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
 
     await expect(migrator.migrate()).rejects.toThrow('не совпадают с журналом');
     const hasBrokenOk: boolean = await tableExists('broken_ok');
@@ -147,11 +151,11 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   });
 
   it('NO_MIGRATION_IS_SKIPPED: правка уже применённой миграции — прогон падает', async () => {
-    const applied: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const applied: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await applied.migrate();
     await copyMigrations(tempDir);
     await writeMigrationSql(tempDir, FIRST_TAG, 'CREATE TABLE "app_meta" ("key" text);');
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, tempDir);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
 
     await expect(migrator.migrate()).rejects.toThrow('не совпадают с журналом');
   });
@@ -159,7 +163,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   it('MIGRATION_IS_ATOMIC: упавший прогон не оставляет ни схемы, ни записей журнала', async () => {
     await copyMigrations(tempDir);
     await addMigration(tempDir, BROKEN_TAG, BROKEN_SQL);
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, tempDir);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
 
     await expect(migrator.migrate()).rejects.toThrow();
     const journal: Row[] = await readJournal();
@@ -174,7 +178,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   it('после исправления миграции следующий прогон применяет её', async () => {
     await copyMigrations(tempDir);
     await addMigration(tempDir, BROKEN_TAG, BROKEN_SQL);
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, tempDir);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
     await expect(migrator.migrate()).rejects.toThrow();
 
     await writeMigrationSql(tempDir, BROKEN_TAG, FIXED_SQL);
@@ -189,36 +193,59 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
   it('упавший прогон отпускает блокировку: следующий не зависает', async () => {
     await copyMigrations(tempDir);
     await addMigration(tempDir, BROKEN_TAG, BROKEN_SQL);
-    const broken: SchemaMigrator = new DrizzleSchemaMigrator(STAND, tempDir);
+    const broken: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
     await expect(broken.migrate()).rejects.toThrow();
 
-    const healthy: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    const healthy: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await healthy.migrate();
     const journal: Row[] = await readJournal();
 
     expect(journal).toHaveLength(1);
   });
 
-  it('проверка базы: без схемы — ошибка, после миграции — ok', async () => {
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND);
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+  it('SCHEMA_MATCHES_CODE: базу не мигрировали — schema_behind, после миграции — ok', async () => {
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
 
     const before: DatabaseCheck = await probe.check();
     await migrator.migrate();
     const after: DatabaseCheck = await probe.check();
 
-    expect(before.ok).toBe(false);
+    expect(before).toMatchObject({ ok: false, reason: 'schema_behind' });
     expect(after).toEqual({ ok: true });
   });
 
-  it('DATABASE_FAILURE_IS_REPORTED: база не успела ответить — проверка не ждёт дольше предела', async () => {
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+  it('SCHEMA_MATCHES_CODE: в коде есть миграция, которой нет в журнале, — schema_behind', async () => {
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
     await migrator.migrate();
-    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, 0);
+    const expected: string[] = [...MIGRATION_HASHES, UNKNOWN_HASH];
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, expected);
 
     const check: DatabaseCheck = await probe.check();
 
-    expect(check.ok).toBe(false);
+    expect(check).toMatchObject({ ok: false, reason: 'schema_behind' });
+  });
+
+  it('SCHEMA_MATCHES_CODE: база новее кода — ok', async () => {
+    await copyMigrations(tempDir);
+    await addMigration(tempDir, BROKEN_TAG, FIXED_SQL);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, tempDir);
+    await migrator.migrate();
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES);
+
+    const check: DatabaseCheck = await probe.check();
+
+    expect(check).toEqual({ ok: true });
+  });
+
+  it('DATABASE_FAILURE_IS_REPORTED: база не успела ответить — проверка не ждёт дольше предела', async () => {
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(STAND, MIGRATIONS_FOLDER);
+    await migrator.migrate();
+    const probe: DatabaseProbe = new NeonDatabaseProbe(STAND, MIGRATION_HASHES, 0);
+
+    const check: DatabaseCheck = await probe.check();
+
+    expect(check).toMatchObject({ ok: false, reason: 'database_unavailable' });
   });
 
   it('db:migrate на пустой базе: код выхода 0, миграции применены', async () => {
@@ -250,7 +277,7 @@ describe.skipIf(HAS_STAND)('стенд базы не задан', () => {
 
 describe('миграции без базы', () => {
   it('pooled-адрес Neon отклоняется до подключения', async () => {
-    const migrator: SchemaMigrator = new DrizzleSchemaMigrator(POOLED_URL, MIGRATIONS_FOLDER);
+    const migrator: SchemaMigrator = new NeonSchemaMigrator(POOLED_URL, MIGRATIONS_FOLDER);
 
     await expect(migrator.migrate()).rejects.toThrow('прямой адрес базы');
   });
