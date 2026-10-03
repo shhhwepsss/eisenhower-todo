@@ -23,6 +23,10 @@ npm run test     # тесты (vitest) каждого пакета
 npm run lint     # eslint, включая границы слоёв и пакетов
 ```
 
+Те же `lint`, `build` и `test` гоняет CI (GitHub Actions, проверка `check`) на каждый PR и
+на каждый мерж в `production` — после `npm ci`, на Node 22
+([`docs/specs/57-ci.md`](docs/specs/57-ci.md)). Зелёный локальный прогон — это зелёный CI.
+
 ## Пакеты
 
 ```

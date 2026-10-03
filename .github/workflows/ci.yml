@@ -1,0 +1,43 @@
+# Проверка каждого PR: те же корневые скрипты, что запускаются локально
+# (docs/specs/57-ci.md). Превью Netlify выключены, поэтому до мержа это
+# единственная проверка; деплой делает Netlify, не CI.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [production]
+
+# Новый пуш в тот же PR отменяет устаревший прогон. Пуши в production
+# не отменяются: у каждого мержа свой результат.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Имя джобы — имя обязательной проверки в защите ветки production.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
