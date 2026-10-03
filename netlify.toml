@@ -2,6 +2,20 @@
   command = "npm run build"
   publish = "apps/web/dist"
 
+# Прод-деплой: сборка, затем миграции базы (docs/specs/51-db-migrations.md). Порядок
+# важен: упала сборка — база не тронута; упала миграция — команда завершается с ошибкой,
+# и деплой не публикуется (FAILED_MIGRATION_FAILS_BUILD). Скрипту нужна `DATABASE_URL`
+# сайта, причём прямой адрес, а не pooled.
+#
+# Только в контексте production: если превью или деплои веток когда-нибудь включат,
+# они не должны мигрировать прод-базу.
+[context.production]
+  command = "npm run build && npm run db:migrate"
+
+# Скрипт миграций открывает WebSocket к базе; глобальный `WebSocket` есть с Node 22.
+[build.environment]
+  NODE_VERSION = "22"
+
 # Функции берутся из сборки, а не из исходников: `@eisenhower/core` вклеивается в
 # функцию при `vite build` (FUNCTION_IS_SELF_CONTAINED, docs/specs/50-api-skeleton.md).
 [functions]

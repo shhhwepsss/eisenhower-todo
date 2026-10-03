@@ -1,0 +1,53 @@
+# Локальный стенд базы (docs/specs/51-db-migrations.md, «Проверка в разработке и в CI»):
+# Postgres 16 и прокси Neon, который говорит с ним по HTTP и WebSocket — так драйверы
+# `neon-http` и `neon-serverless` работают настоящие, а не подменяются `pg`.
+#
+#   docker compose -f apps/api/stand/docker-compose.yml up -d --wait
+#
+# Адрес базы для тестов и скрипта миграций:
+#   postgres://postgres:postgres@db.localtest.me:5432/main
+# `db.localtest.me` резолвится в 127.0.0.1; по этому имени код понимает, что перед ним
+# стенд, и ходит на порт прокси 4444 без TLS (apps/api/src/db/neon-stand.ts).
+#
+# Тот же файл поднимает CI (.github/workflows/ci.yml).
+name: eisenhower-stand
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: main
+    # Порт наружу не публикуется: к базе ходят только через прокси, а 5432 на машине
+    # разработчика часто занят другим Postgres.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d main']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  neon-proxy:
+    # Сторонний образ, поэтому закреплён дайджестом, а не тегом `main`: тег можно
+    # перезаписать, дайджест — нет.
+    image: ghcr.io/timowilhelm/local-neon-http-proxy@sha256:cd2ae14edf2feafbc3330492de5c80506f77274c3bd013154cdef697bdeb768a
+    environment:
+      PG_CONNECTION_STRING: postgres://postgres:postgres@postgres:5432/main
+    ports:
+      - '4444:4444'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Готов, когда через него проходит запрос к базе, а не когда запущен процесс:
+    # `up --wait` возвращается только после этого.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -o /dev/null -X POST http://localhost:4444/sql
+          -H 'Neon-Connection-String: postgres://postgres:postgres@db.localtest.me/main'
+          -H 'Content-Type: application/json'
+          -d '{"query":"select 1","params":[]}'
+      interval: 2s
+      timeout: 5s
+      retries: 15
