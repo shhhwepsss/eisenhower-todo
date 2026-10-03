@@ -12,7 +12,7 @@ import type { Neighbours, Priority, TaskStatus, Zone } from '@eisenhower/core';
  * Исключение — `moveToZone`: место назначает жест пользователя, и знает его только
  * вызывающая сторона. Она передаёт соседей, а не ранг, — RANK_IS_OPAQUE.
  */
-export type TaskActions = {
+export interface TaskActions {
   /** Быстрый захват (PRD S1): достаточно заголовка, задача рождается неразобранной. */
   addTask(title: string, text?: string): void;
   editTitle(id: string, title: string): void;
@@ -24,4 +24,4 @@ export type TaskActions = {
   /** Перетаскивание: задача встаёт ровно между переданными соседями (PRD S4). */
   moveToZone(id: string, to: Zone, between: Neighbours): void;
   deleteTask(id: string): void;
-};
+}

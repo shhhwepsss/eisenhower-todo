@@ -243,7 +243,7 @@ PRD нет явно. Оно вынужденное: без него `MATRIX_PART
 ### Переходы между зонами
 
 Куда задача может уехать и что при этом происходит с рангом, описано таблицей
-`ZONE_MOVES` (`src/domain/constants/zone-moves.ts`): 5 зон × 5 зон = 25 переходов,
+`ZONE_MOVES` (`packages/core/src/constants/zone-moves.constant.ts`): 5 зон × 5 зон = 25 переходов,
 каждый со своим смыслом и правилом ранга. Пропустить переход нельзя — тип
 `Record<ZoneMoveKey, ZoneMove>` требует все ключи.
 

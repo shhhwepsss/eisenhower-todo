@@ -16,7 +16,8 @@ Vite + React + TypeScript (`strict`), Vitest, ESLint.
 
 ```bash
 npm install
-npm run dev      # дев-сервер apps/web
+npm run dev      # дев-сервер apps/web; /api проксируется на dev-сервер API
+npm run dev:api  # дев-сервер apps/api на 127.0.0.1:8787 (во втором терминале)
 npm run build    # проверка типов + продовая сборка
 npm run test     # тесты (vitest) каждого пакета
 npm run lint     # eslint, включая границы слоёв и пакетов
@@ -27,7 +28,13 @@ npm run lint     # eslint, включая границы слоёв и паке�
 ```
 packages/core/   @eisenhower/core — домен; общий код для фронта и бека
 apps/web/        фронтенд: state, storage, ui, shared, styles
+apps/api/        бек: Hono за одной функцией Netlify (/api/*)
 ```
+
+Фронт и API — один сайт Netlify. Функция собирается `vite build` в
+`apps/api/dist/functions/api.mjs` вместе с `@eisenhower/core`: бандлер функций Netlify
+пакеты не собирает, а core — исходники на TypeScript
+([`docs/specs/50-api-skeleton.md`](docs/specs/50-api-skeleton.md)).
 
 Общий код приложение берёт только через `@eisenhower/core`. Пакет ядра не знает о
 браузере и React. Эти правила держит ESLint (`PACKAGE_BOUNDARIES`, `CORE_IS_PORTABLE`,

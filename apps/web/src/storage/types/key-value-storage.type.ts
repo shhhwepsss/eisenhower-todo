@@ -7,7 +7,7 @@
  * подделки в тесте. Узкий тип здесь дешевле: `localStorage` ему соответствует
  * как есть.
  */
-export type KeyValueStorage = {
+export interface KeyValueStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
-};
+}
