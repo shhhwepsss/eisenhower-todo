@@ -11,6 +11,7 @@ import type { Task } from '@eisenhower/core';
 
 import { log } from './log';
 import type { Action, AppState } from './types';
+import type { TaskMutation } from './types';
 
 /**
  * Редьюсер состояния (docs/specs/4-architecture.md §5).
@@ -27,9 +28,6 @@ import type { Action, AppState } from './types';
  * чистоты не нарушают: читает и пишет эффект в провайдере, сюда приезжает уже
  * готовый результат.
  */
-
-/** Мутация задачи в терминах домена: задача плюс намерение — новая задача. */
-type TaskMutation = (task: Task) => Task;
 
 /**
  * Единственное место, где массив задач пересобирается.

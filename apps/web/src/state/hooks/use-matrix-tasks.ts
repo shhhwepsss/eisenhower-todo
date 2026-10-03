@@ -1,7 +1,7 @@
 import type { Quadrant, Task } from '@eisenhower/core';
 
 import { useStore } from '../context';
-import { tasksInZone } from '../helpers';
+import { tasksInZone } from '../lib';
 import type { Store } from '../types';
 
 /**

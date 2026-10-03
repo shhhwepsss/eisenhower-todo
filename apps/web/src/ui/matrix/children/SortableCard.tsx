@@ -1,16 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable';
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
-import type { Task } from '@eisenhower/core';
 import { hitsControl } from '@/shared/dom/control-hit';
 import { TaskCard } from '@/ui/task';
 import { DragGrip } from './DragGrip';
 import styles from './SortableCard.module.scss';
-
-type SortableCardProps = {
-  task: Task;
-  /** Клик по карточке — открыть окно правки этой задачи (issue #40). */
-  onOpen: (id: string) => void;
-};
+import type { SortableCardProps } from '../types';
 
 /**
  * Карточка, которую можно перетащить. Обёртка живёт в слайсе матрицы, а не

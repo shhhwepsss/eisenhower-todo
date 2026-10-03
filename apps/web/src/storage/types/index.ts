@@ -1,6 +1,6 @@
-export type { KeyValueStorage } from './key-value-storage';
-export type { Repositories } from './repositories';
-export type { SettingsRepository, TaskRepository } from './repository';
-export type { SnapshotEnvelope } from './snapshot-envelope';
-export type { StorageError } from './storage-error';
-export type { StorageErrorKind } from './storage-error-kind';
+export type { KeyValueStorage } from './key-value-storage.type';
+export type { Repositories } from './repositories.type';
+export type { SettingsRepository, TaskRepository } from './repository.type';
+export type { SnapshotEnvelope } from './snapshot-envelope.type';
+export type { StorageError } from './storage-error.type';
+export type { StorageErrorKind } from './storage-error-kind.type';

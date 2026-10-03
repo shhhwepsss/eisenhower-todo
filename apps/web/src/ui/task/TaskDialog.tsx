@@ -6,24 +6,10 @@ import {
   Root as DialogRoot,
   Title as DialogTitle,
 } from '@radix-ui/react-dialog';
-import type { Task } from '@eisenhower/core';
 import { TaskDialogProperties } from './children/TaskDialogProperties';
 import { TaskDialogText } from './children/TaskDialogText';
 import styles from './TaskDialog.module.scss';
-
-/**
- * Задача приезжает целиком, а не идентификатором: кто её нашёл — дело
- * вызывающей вкладки, а окну нужна текущая версия задачи на каждый рендер,
- * иначе правка признаков не обновила бы квадрант на глазах.
- *
- * `null` означает «закрыто». Отдельного флага `open` нет намеренно: два
- * источника истины разошлись бы — «открыто, но задачи нет» непредставимо,
- * и незачем давать этому состоянию возможность существовать.
- */
-type TaskDialogProps = {
-  task: Task | null;
-  onClose: () => void;
-};
+import type { TaskDialogProps } from './types';
 
 /**
  * Правка, набранная в поле и ещё не уехавшая в стор, — NO_LOST_EDIT.

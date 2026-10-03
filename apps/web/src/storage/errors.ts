@@ -1,12 +1,5 @@
 import type { StorageError, StorageErrorKind } from './types';
-
-/** Необязательные подробности отказа: обе стороны нужны не всякому виду ошибки. */
-type StorageErrorDetails = {
-  /** Строка снапшота — там, где отказ произошёл на чтении. */
-  raw?: string;
-  /** Исключение, из-за которого всё случилось: `QuotaExceededError` и подобные. */
-  cause?: unknown;
-};
+import type { StorageErrorDetails } from './types/storage-error-details.type';
 
 /**
  * Единственная дверь в `StorageError`: вид отказа и сообщение задаются здесь,

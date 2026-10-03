@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createLog } from '@/shared/logger';
-import type { Logger } from '@/shared/logger';
+import type { Logger } from '@/shared/types';
 import { DEFAULT_TAB } from '../constants';
 import type { ActiveTab, TabId } from '../types';
 

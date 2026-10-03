@@ -22,7 +22,7 @@ import { useState } from 'react';
 import { QUADRANTS } from '@eisenhower/core';
 import type { Task } from '@eisenhower/core';
 import { useBodyDragging } from '@/shared/hooks/use-body-dragging';
-import type { BodyDragging } from '@/shared/hooks/use-body-dragging';
+import type { BodyDragging } from '@/shared/types';
 import { useMatrixZones, useTaskActions } from '@/state';
 import type { MatrixZones, TaskActions } from '@/state';
 import { TaskDialog, useTaskDialog } from '@/ui/task';
@@ -30,8 +30,8 @@ import type { TaskDialogState } from '@/ui/task';
 import { DragPreview } from './children/DragPreview';
 import { MatrixZone } from './children/MatrixZone';
 import { INBOX_META, QUADRANT_META } from './constants';
-import { findTaskInZones, resolveDrop } from './helpers';
-import type { DropTarget } from './helpers';
+import { findTaskInZones, resolveDrop } from './lib';
+import type { DropTarget } from './types';
 import styles from './MatrixTab.module.scss';
 
 /**

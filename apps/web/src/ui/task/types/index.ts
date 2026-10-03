@@ -1,35 +1,6 @@
-import type { ReactNode } from 'react';
-import type { Task } from '@eisenhower/core';
-
-/**
- * Карточке и строке нужна сама задача, а не её поля россыпью: действия зовутся
- * по `id`, а показывается заголовок и статус — разбирать задачу на пропсы значило бы
- * собирать её обратно в каждом дочернем компоненте.
- */
-export type TaskProps = { task: Task };
-
-/**
- * Поле правки, которое показывается в двух разных местах: в строке списка оно
- * компактное, в окне задачи — крупное и высокое (issue #40).
- *
- * Размер приезжает классом снаружи, а не флагом `variant` внутри: так правило
- * «класс из модуля не течёт в чужой компонент» остаётся в силе — поле держит
- * своё оформление, а габарит назначает тот модуль, в чьей раскладке поле лежит.
- * Флаг же заставил бы поле знать про все места, где его показывают.
- */
-export type TaskFieldProps = TaskProps & { className?: string | undefined };
-
-/**
- * Ручка приезжает в карточку готовым узлом, а не собирается внутри неё: слушатели
- * жеста живут в `SortableCard` (слайс матрицы), и знать о `@dnd-kit` карточке
- * незачем — DND_IS_UI_ONLY держит границу только снаружи `ui/`, а внутри её
- * держит эта форма пропса.
- */
-export type TaskCardProps = TaskProps & { handle: ReactNode };
-
-/**
- * Строка списка открывает окно правки, но сама его не держит: «какая задача
- * открыта» — состояние вкладки (`useTaskDialog` в `ui/list`), а строка только
- * сообщает, по какой из них кликнули. Так же устроена карточка матрицы.
- */
-export type TaskRowProps = TaskProps & { onOpen: (id: string) => void };
+export type { TaskCardProps } from './task-card-props.type';
+export type { TaskDialogProps } from './task-dialog-props.type';
+export type { TaskDialogState } from './task-dialog-state.type';
+export type { TaskFieldProps } from './task-field-props.type';
+export type { TaskProps } from './task-props.type';
+export type { TaskRowProps } from './task-row-props.type';
