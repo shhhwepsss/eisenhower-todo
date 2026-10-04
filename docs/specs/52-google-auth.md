@@ -2,13 +2,21 @@
 
 ## Задача
 
-Дать API вход через Google и сессию в cookie так, чтобы любая ручка, кроме явно открытых,
-без сессии отвечала `401`.
+Дать API вход через Google и сессию в cookie так, чтобы любая зарегистрированная ручка,
+кроме явно открытых, без сессии отвечала `401`.
 
 ## Прототип
 
-Не требуется: экран входа на фронте — #46. Здесь вход проверяется встроенными страницами
-Auth.js и `curl`.
+Своего экрана входа в этой задаче нет — прототип не делается (человек, 2026-10-04).
+
+Что человек видит до #46: встроенную страницу Auth.js по адресу `/api/auth/signin` —
+карточка с одной кнопкой «Sign in with Google» (`@auth/core`,
+`lib/pages/signin.tsx:96-143`), без нашего оформления и на английском. Нажатие ведёт на
+страницу согласия Google и обратно. Приложение на фронте о входе ещё не знает и работает
+как раньше, с `localStorage`.
+
+Свой экран входа, кнопка выхода и гейт перед приложением — #46: там это фаза 0 с
+прототипом (светлая и тёмная тема, узкий экран) и выбором направления.
 
 ## Решения
 
@@ -20,9 +28,13 @@ Auth.js и `curl`.
   2026-09-24). Better Auth и `@hono/oauth-providers` отклонены.
 - **Пакеты** (2026-10-04, `CLAUDE.md` §10): `@hono/auth-js` 1.1.1, `@auth/core` 0.41.3,
   `@auth/drizzle-adapter` 1.11.3.
-- **Всё, что не открыто явно, без сессии отвечает `401` — включая неизвестный путь**
-  (2026-10-04). До этой задачи неизвестный путь отвечал `404`
-  (`apps/api/src/create-app.ts:24`). С сессией неизвестный путь по-прежнему `404`.
+- **Путь, которого нет, отвечает `404` — есть сессия или нет** (2026-10-04, ревью спеки;
+  заменяет ответ того же дня «`401` на всё, что не открыто»). Поведение как до задачи
+  (`apps/api/src/create-app.ts:24`). `401` получает только запрос без сессии к
+  существующей закрытой ручке.
+- **Экран входа — встроенная страница Auth.js, свой экран — в #46** (2026-10-04).
+- **Новый JWT выпускает `/api/auth/session`; каждый вход даёт новый токен**
+  (2026-10-04). Поведение библиотеки как есть, см. «Срок сессии» ниже.
 - **Клиент Google OAuth создаёт человек** (2026-10-04); секреты — в окружении Netlify и
   в локальном `apps/api/.env`.
 - **Вход на деплой-превью не работает** (2026-09-24): Google не принимает шаблоны
@@ -35,9 +47,29 @@ Auth.js и `curl`.
 (`nextauthjs/next-auth`, `packages/core/src/…`), `@auth/drizzle-adapter`
 (`packages/adapter-drizzle/src/lib/pg.ts`).
 
-- **Таблицы.** Адаптеру обязательны `usersTable` и `accountsTable`; `sessionsTable`,
-  `verificationTokensTable` и `authenticatorsTable` опциональны (`pg.ts:584-586`). При
-  JWT-сессии и одном OAuth-провайдере они не используются, и мы их не заводим.
+- **Таблицы адаптера: пять, заводим две.** Обязательны `usersTable` и `accountsTable`,
+  остальные три опциональны (`pg.ts:584-586`).
+
+  Заводим:
+
+  - `users` — **кто пользователь**: одна строка на человека. Её `id` уходит в `sub`
+    сессии и станет владельцем задач (#46).
+  - `accounts` — **каким внешним аккаунтом человек входит**: пара «провайдер +
+    идентификатор у провайдера» → `users.id`. По ней вход отвечает на вопрос «этот
+    аккаунт Google уже наш пользователь?».
+
+  Не заводим:
+
+  - `sessions` — сессии при `strategy: 'database'`: строка на каждую активную сессию, в
+    cookie только её ключ. У нас сессия — JWT в cookie.
+  - `verificationTokens` — одноразовые токены входа по ссылке из письма (Magic Link).
+    Входа по почте нет.
+  - `authenticators` — ключи WebAuthn (passkey) пользователя. WebAuthn нет.
+
+  Почему `users` и `accounts` — две таблицы, а не одна: человек и способ входа разведены,
+  чтобы к одному человеку можно было привязать несколько провайдеров. Провайдер у нас
+  один, строк будет по одной, но контракт адаптера требует обе. Подробно —
+  `docs/entities/user.md`, `docs/entities/account.md`.
 - **Адаптер не открывает транзакций** (в `pg.ts` нет вызова `transaction`), поэтому ему
   хватает драйвера `neon-http` — того же, что уже едет в функцию
   (`apps/api/tests/function-bundle.test.ts:31`).
@@ -59,13 +91,28 @@ Auth.js и `curl`.
 - **`Secure` у cookie зависит от протокола.** `useSecureCookies` по умолчанию —
   `url.protocol === 'https:'` (`lib/init.ts:109`); от него же зависит префикс
   `__Secure-` (`lib/utils/cookie.ts:60-69`). `HttpOnly` и `SameSite=Lax` стоят всегда.
-- **Срок сессии — 30 дней без активности** (`lib/init.ts:71`), cookie продлевается при
-  обращении.
+- **Срок сессии.** Отдельных access- и refresh-токенов нет: в cookie лежит один JWT со
+  сроком жизни 30 дней (`lib/init.ts:71`). Токен не продлевается — выпускается новый:
+  - каждый вход через Google выпускает новый JWT
+    (`lib/actions/callback/index.ts:143-150`);
+  - запрос к `/api/auth/session` расшифровывает текущий JWT, подписывает новый с новым
+    сроком и ставит его в cookie (`lib/actions/session.ts:70-78`);
+  - запросы к остальным ручкам срок **не двигают**: `getAuthUser` берёт из ответа Auth.js
+    только тело, ответные cookie отбрасывает (`@hono/auth-js`, `index.ts:85-100`).
+
+  Следствие для #46: фронт при открытии приложения зовёт `/api/auth/session` и получает
+  свежий JWT. Кто не открывал приложение 30 дней, входит заново.
 - **`verifyAuth` бросает `HTTPException(401)` с текстовым телом `Unauthorized`**
   (`index.ts:107-111`), а `respondInternalError` любую ошибку отдаёт как `500 internal`
   (`apps/api/src/http/error.responder.ts:25-29`). Поэтому `verifyAuth` не используется:
   своё middleware зовёт `getAuthUser` (`index.ts:73`) и само отвечает `401` в формате
   `ErrorBody`.
+- **Hono знает, какие маршруты совпали с запросом.** `matchedRoutes(c)` из `hono/route`
+  отдаёт совпавшие маршруты с полем `method`
+  (`node_modules/hono/dist/types/helper/route/index.d.ts:30`, `types.d.ts:23-28`);
+  middleware, подключённое через `app.use`, регистрируется с методом `ALL`
+  (`node_modules/hono/dist/hono-base.js:60-68`). По этому признаку middleware отличает
+  существующую ручку от несуществующей раньше, чем потребует сессию.
 - **Адрес возврата Google** — `<AUTH_URL>/callback/google`. Локально это
   `http://127.0.0.1:5173/api/auth/callback/google`: фронт слушает `127.0.0.1` и
   проксирует `/api` (`apps/web/vite.config.ts:18-22`), а Google разрешает `http` и
@@ -81,26 +128,44 @@ Auth.js и `curl`.
 
 ```
 apps/api/src/
-  db/schema.ts                         + users, accounts
-  db/neon/neon-auth-adapter.ts         Drizzle (neon-http) + DrizzleAdapter → Adapter
-  constants/open-routes.constant.ts    OPEN_ROUTES — единственный список открытых ручек
-  constants/env-schema.constant.ts     + AUTH_SECRET, AUTH_URL, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET
-  http/auth-config.middleware.ts       конфиг Auth.js из разобранного окружения
-  http/require-session.middleware.ts   AUTH_REQUIRED_BY_DEFAULT
-  mappers/session-user.mapper.ts       toSessionUser(authUser): SessionUser
-  types/session-user.type.ts           SessionUser { id, name, email }
-  types/app-deps.type.ts               + createAuthAdapter: (env: Env) => Adapter
-  types/app-env.type.ts                + Variables.sessionUser
-  modules/auth/auth.routes.ts          /auth/* → authHandler()
-  modules/me/me.routes.ts              GET /me
-  modules/me/me.controller.ts
-  modules/me/mappers/me-body.mapper.ts toMeBody(sessionUser): MeBody
-  modules/me/types/me-body.type.ts
+├── create-app.ts                        + порядок middleware, регистрация auth и me
+├── constants/
+│   ├── env-schema.constant.ts           + AUTH_SECRET, AUTH_URL, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET
+│   └── open-routes.constant.ts          OPEN_ROUTES — единственный список открытых ручек
+├── db/
+│   ├── schema.ts                        + users, accounts
+│   └── neon/
+│       └── neon-auth-adapter.ts         Drizzle (neon-http) + DrizzleAdapter → Adapter
+├── http/
+│   ├── auth-config.middleware.ts        конфиг Auth.js из разобранного окружения
+│   └── require-session.middleware.ts    AUTH_REQUIRED_BY_DEFAULT, UNKNOWN_PATH_IS_NOT_FOUND
+├── mappers/
+│   └── session-user.mapper.ts           toSessionUser(authUser): SessionUser
+├── types/
+│   ├── session-user.type.ts             SessionUser { id, name, email }
+│   ├── app-deps.type.ts                 + createAuthAdapter: (env: Env) => Adapter
+│   └── app-env.type.ts                  + Variables.sessionUser
+└── modules/
+    ├── auth/
+    │   └── auth.routes.ts               /auth/* → authHandler()
+    └── me/
+        ├── me.routes.ts                 GET /me
+        ├── me.controller.ts
+        ├── mappers/
+        │   └── me-body.mapper.ts        toMeBody(sessionUser): MeBody
+        └── types/
+            └── me-body.type.ts
 ```
 
 - **Порядок в `create-app.ts`:** `requireEnv` → конфиг Auth.js → `requireSession` →
-  маршруты модулей → `404` → `500`. `requireSession` пропускает запрос, если путь есть в
-  `OPEN_ROUTES`, иначе требует сессию.
+  маршруты модулей → `404` → `500`.
+- **`requireSession` решает в три шага:** путь в `OPEN_ROUTES` — пропустить; среди
+  совпавших маршрутов нет обработчика (только middleware с методом `ALL`) — пропустить,
+  запрос дойдёт до `respondNotFound` и получит `404`; иначе — требовать сессию, без неё
+  `401`. Так новая ручка закрыта без единой строки в ней самой, а несуществующий путь и
+  неверный метод (`POST /api/health`) отвечают `404`, как сейчас.
+  *Цена:* разница между `401` и `404` показывает без входа, какие закрытые ручки
+  существуют. Альтернативу без этого — `401` на всё — человек отклонил.
 - **Наш тип `SessionUser`, а не `AuthUser` библиотеки.** `requireSession` переводит
   ответ Auth.js маппером и кладёт в контекст `sessionUser`. Модули (`me` сейчас, задачи
   в #46) о типах Auth.js не знают — фильтр по владельцу в #46 берёт `sessionUser.id`.
@@ -157,10 +222,10 @@ sequenceDiagram
     alt первый вход
         A->>D: createUser, затем linkAccount
     else повторный вход
-        Note over A,D: пользователь найден, записи нет
+        Note over A,D: пользователь найден, в базу ничего не пишется
     end
-    A-->>B: 302, cookie сессии (JWT, sub = users.id)
-    B->>A: GET /api/me с cookie
+    A-->>B: 302, Set-Cookie: HttpOnly-cookie сессии (JWT, sub = users.id)
+    B->>A: GET /api/me, браузер сам прикладывает cookie
     Note over A: JWT расшифрован, база не нужна
     A-->>B: 200 { id, name, email }
 ```
@@ -182,9 +247,9 @@ sequenceDiagram
 
 Записаны агентом; ни один не считается принятым, пока человек не подтвердил.
 
-1. **Сессию нельзя отозвать на сервере.** JWT действует до истечения (30 дней без
-   активности). «Выход» стирает cookie в этом браузере; украденная cookie работает до
-   конца срока. Отзыв требует `strategy: 'database'` — тогда каждая проверка сессии
+1. **Сессию нельзя отозвать на сервере.** JWT действует 30 дней с момента выпуска.
+   «Выход» стирает cookie в этом браузере; украденная cookie работает до конца срока, а
+   через `/api/auth/session` её владелец может выпускать себе новые. Отзыв требует `strategy: 'database'` — тогда каждая проверка сессии
    ходит в базу. Аварийный отзыв всех сессий — смена `AUTH_SECRET`.
 2. **Токены Google лежат в `accounts`.** Адаптер пишет `access_token`, `id_token`,
    `refresh_token` как пришли. Мы ими не пользуемся; запрошены только `openid email
@@ -240,9 +305,11 @@ sequenceDiagram
 
 ## Инварианты
 
-- `AUTH_REQUIRED_BY_DEFAULT`: запрос без сессии к любому пути под `/api`, которого нет в
-  `OPEN_ROUTES`, получает `401`; `OPEN_ROUTES` — единственное место, где ручка
-  открывается.
+- `AUTH_REQUIRED_BY_DEFAULT`: запрос без сессии к любой зарегистрированной ручке,
+  которой нет в `OPEN_ROUTES`, получает `401`; `OPEN_ROUTES` — единственное место, где
+  ручка открывается.
+- `UNKNOWN_PATH_IS_NOT_FOUND`: путь или метод, для которых обработчик не зарегистрирован,
+  отвечают `404 {"error":"not_found"}` — с сессией и без неё.
 - `SESSION_COOKIE_IS_HARDENED`: cookie сессии всегда `HttpOnly` и `SameSite=Lax`; при
   `AUTH_URL` с `https` — ещё `Secure` и префикс `__Secure-`.
 - `SESSION_CHECK_SKIPS_DATABASE`: проверка сессии не обращается к базе.
@@ -267,9 +334,12 @@ sequenceDiagram
 - [ ] Given валидная cookie и недоступная база When `GET /api/me` Then `200`.
 - [ ] Given нет cookie When `GET /api/health` Then ответ как до задачи.
 - [ ] Given нет cookie When `GET /api/auth/signin` Then не `401`.
-- [ ] Given нет cookie When запрос на неизвестный путь Then `401`.
+- [ ] Given нет cookie When запрос на неизвестный путь Then `404 {"error":"not_found"}`.
 - [ ] Given валидная cookie When запрос на неизвестный путь Then `404
   {"error":"not_found"}`.
+- [ ] Given нет cookie When `POST /api/health` или `POST /api/me` Then `404`.
+- [ ] Given валидная cookie When `GET /api/auth/session` Then в ответе `Set-Cookie` с
+  новым JWT; When `GET /api/me` Then `Set-Cookie` сессии в ответе нет.
 - [ ] Given тестовая ручка, зарегистрированная без записи в `OPEN_ROUTES` Then без сессии
   `401`.
 - [ ] Given не задана любая из `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID`,
