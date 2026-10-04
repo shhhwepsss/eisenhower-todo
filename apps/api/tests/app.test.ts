@@ -78,7 +78,7 @@ describe('API', () => {
   });
 
   it('SCHEMA_MATCHES_CODE: в базе нет миграций кода — 500 со статусом schema_behind', async () => {
-    const cause: Error = new Error('в журнале базы нет 1 из 2 миграций кода');
+    const cause: Error = new Error('в журнале базы нет последней миграции кода');
     const app: Hono<AppEnv> = createTestApp({ ok: false, reason: 'schema_behind', cause });
     vi.spyOn(console, 'error').mockImplementation(() => {});
 

@@ -283,6 +283,8 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
 
 describe.skipIf(HAS_STAND)('стенд базы не задан', () => {
   it('интеграционные тесты пропущены: нет TEST_DATABASE_URL', () => {
+    // В CI стенд обязан быть: иначе проверка зелёная без единого теста миграций.
+    expect(process.env.CI, 'в CI не задан TEST_DATABASE_URL: миграции не проверены').toBeUndefined();
     console.warn(
       'Интеграционные тесты базы пропущены: не задан TEST_DATABASE_URL ' +
         '(стенд — apps/api/stand/docker-compose.yml).',

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -37,6 +38,21 @@ const NEON_HTTP_IMPORT: RegExp = /["']drizzle-orm\/neon-http["']/;
  */
 const MIGRATION_TRACES: RegExp =
   /["'][^"'\s]*(neon-serverless|migrator)[^"'\s]*["']|pg_advisory_lock|CREATE TABLE/;
+
+/**
+ * Хеш последней миграции, посчитанный мимо кода сборки: sha256 файла, который журнал
+ * drizzle-kit называет последним. Так же его считает migrator, когда пишет журнал базы.
+ */
+const readLatestMigrationHash = async (): Promise<string> => {
+  const journalPath: string = join(API_ROOT, 'drizzle', 'meta', '_journal.json');
+  const journalText: string = await readFile(journalPath, 'utf8');
+  const journal: { entries: { tag: string }[] } = JSON.parse(journalText);
+  const latest: { tag: string } | undefined = journal.entries.at(-1);
+  if (latest === undefined) throw new Error('в журнале drizzle-kit нет миграций');
+  const migrationPath: string = join(API_ROOT, 'drizzle', `${latest.tag}.sql`);
+  const migrationSql: string = await readFile(migrationPath, 'utf8');
+  return createHash('sha256').update(migrationSql).digest('hex');
+};
 
 describe('FUNCTION_IS_SELF_CONTAINED', () => {
   let tempDir: string = '';
@@ -80,6 +96,16 @@ describe('FUNCTION_IS_SELF_CONTAINED', () => {
 
     expect(source).toMatch(NEON_HTTP_IMPORT);
     expect(source).not.toMatch(MIGRATION_TRACES);
+  }, 30_000);
+
+  // Хеш доезжает до функции только если `app.ts` передал его проверке базы: иначе
+  // константа не используется и сборка её выбрасывает.
+  it('SCHEMA_MATCHES_CODE: в функцию вклеен хеш последней миграции', async () => {
+    const outDir: string = join(tempDir, 'api-hash');
+    const { source } = await buildBundle('functions/api.ts', outDir);
+    const latestMigrationHash: string = await readLatestMigrationHash();
+
+    expect(source).toContain(latestMigrationHash);
   }, 30_000);
 
   it('код, который пользуется core, собирается с core внутри и исполняется в Node', async () => {

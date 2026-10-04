@@ -36,7 +36,7 @@ describe('CheckHealthUseCase', () => {
   });
 
   it('сбой базы — значение: use-case не пишет лог, это дело контроллера', async () => {
-    const cause: Error = new Error('в журнале базы нет 1 из 2 миграций кода');
+    const cause: Error = new Error('в журнале базы нет последней миграции кода');
     const useCase: CheckHealthUseCase = createUseCase(async () => {
       return { ok: false, reason: 'schema_behind', cause };
     });
