@@ -37,12 +37,16 @@ export class NeonSchemaMigrator implements SchemaMigrator {
     // Обрыв соединения драйвер сообщает ещё и событием. Без слушателя Node уронил бы
     // процесс мимо обработки ошибок; сама ошибка приходит в запрос, который её ждал.
     client.on('error', () => {});
+    // Вне `try`: соединение не открылось — закрывать нечего. `end()` на неоткрытом
+    // сокете бросает из таймера драйвера, мимо любого `catch`.
+    await client.connect();
     try {
-      await client.connect();
       await this.migrateUnderLock(client);
-    } finally {
-      await this.close(client);
+    } catch (runError) {
+      await this.closeAfterFailure(client, runError);
+      throw runError;
     }
+    await client.end();
   }
 
   /**
@@ -58,15 +62,18 @@ export class NeonSchemaMigrator implements SchemaMigrator {
   }
 
   /**
-   * Закрытие не должно заслонить ошибку прогона: если соединение уже мертво, `end()`
-   * тоже падает, а в лог обязана попасть исходная ошибка базы. Блокировку в этом случае
-   * уже отпустил обрыв соединения.
+   * Ошибка закрытия не глотается, но и ошибку прогона не заслоняет: если упали оба,
+   * наверх уходят обе. Блокировку в этом случае отпускает обрыв соединения.
    */
-  private async close(client: Client): Promise<void> {
+  private async closeAfterFailure(client: Client, runError: unknown): Promise<void> {
     try {
       await client.end();
-    } catch {
-      // Соединение уже закрыто — закрывать нечего.
+    } catch (closeError) {
+      throw new AggregateError(
+        [runError, closeError],
+        'Миграции не применены, и соединение с базой не закрылось.',
+        { cause: closeError },
+      );
     }
   }
 

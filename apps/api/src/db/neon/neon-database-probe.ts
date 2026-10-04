@@ -1,4 +1,5 @@
-import { sql } from 'drizzle-orm';
+import { NeonDbError } from '@neondatabase/serverless';
+import { DrizzleQueryError, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
@@ -80,16 +81,13 @@ export class NeonDatabaseProbe implements DatabaseProbe {
 
   /**
    * Журнала нет вовсе — базу ни разу не мигрировали. Это отставание схемы, а не
-   * недоступность: до базы запрос дошёл. Код ошибки Postgres лежит в самой ошибке или в
-   * её `cause` — драйвер и drizzle оборачивают её по-разному.
+   * недоступность: до базы запрос дошёл. `db.execute` любую ошибку запроса бросает как
+   * `DrizzleQueryError`; ошибка драйвера с кодом Postgres лежит в его `cause`.
    */
   private isMissingJournal(error: unknown): boolean {
-    let current: unknown = error;
-    while (typeof current === 'object' && current !== null) {
-      const candidate: { code?: unknown; cause?: unknown } = current;
-      if (candidate.code === UNDEFINED_TABLE_CODE) return true;
-      current = candidate.cause;
-    }
-    return false;
+    if (!(error instanceof DrizzleQueryError)) return false;
+    const driverError: unknown = error.cause;
+    if (!(driverError instanceof NeonDbError)) return false;
+    return driverError.code === UNDEFINED_TABLE_CODE;
   }
 }

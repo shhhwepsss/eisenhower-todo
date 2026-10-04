@@ -17,6 +17,20 @@ const PACKAGE_BOUNDARIES =
   '@eisenhower/core. Приложения не импортируют друг друга, в чужой пакет не ходят ' +
   'относительным путём.';
 
+const NO_EMPTY_CATCH =
+  'NO_EMPTY_CATCH: пустой `catch` глотает ошибку. Ошибку либо обрабатывают, либо ' +
+  'пропускают наверх; блок из одного комментария — тоже пустой.';
+
+/**
+ * Встроенное `no-empty` считает блок с комментарием непустым, поэтому запрет записан
+ * селектором. Экспортируется: пакет, который задаёт `no-restricted-syntax` сам,
+ * заменяет настройки базы целиком и обязан перечислить этот запрет заново.
+ */
+export const noEmptyCatch = {
+  selector: 'CatchClause > BlockStatement[body.length=0]',
+  message: NO_EMPTY_CATCH,
+};
+
 /**
  * Границы пакетов держит `@typescript-eslint/no-restricted-imports`, а не базовое
  * `no-restricted-imports`. Во flat config поздний объект с тем же правилом заменяет
@@ -78,6 +92,7 @@ export const baseConfig = tseslint.config(
       'no-restricted-syntax': [
         'error',
         { selector: 'FunctionExpression', message: ARROW_FUNCTIONS_ONLY },
+        noEmptyCatch,
       ],
     },
   },

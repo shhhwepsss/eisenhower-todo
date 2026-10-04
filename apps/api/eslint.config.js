@@ -1,6 +1,6 @@
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import { baseConfig } from '../../eslint.config.base.js';
+import { baseConfig, noEmptyCatch } from '../../eslint.config.base.js';
 import { moduleBoundariesPlugin } from './eslint.module-boundaries.js';
 
 const DB_BEHIND_INTERFACE =
@@ -49,10 +49,10 @@ export default tseslint.config(
     // Сущности API — классы с методами (CLAUDE.md §8). Метод класса в ESTree — это
     // FunctionExpression, поэтому запрет из базы здесь снят. Объявления `function`
     // (`func-style`) и не-стрелочные колбэки (`prefer-arrow-callback`) по-прежнему
-    // запрещены.
-    files: ['**/*.ts'],
+    // запрещены. Запрет пустого `catch` остаётся — и для скриптов на JS тоже.
+    files: ['**/*.ts', 'scripts/**/*.js'],
     rules: {
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': ['error', noEmptyCatch],
     },
   },
 

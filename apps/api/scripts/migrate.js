@@ -20,10 +20,10 @@ const server = await createServer({
 
 try {
   const { runMigrations } = await server.ssrLoadModule('/src/migrate.ts');
-  const migrated = await runMigrations();
-  if (!migrated) process.exitCode = 1;
+  await runMigrations();
 } catch (error) {
-  console.error('db:migrate: скрипт миграций не запустился', error);
+  // Полный текст ошибки базы в логе уместен: это лог сборки, а не ответ клиенту.
+  console.error('db:migrate: миграции не применены', error);
   process.exitCode = 1;
 } finally {
   await server.close();
