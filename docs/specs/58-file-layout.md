@@ -1,9 +1,9 @@
-# #58 — Раскладка файлов: типы, константы, lib и сервисы
+# #58 — Раскладка файлов: типы, константы, lib, сервисы и мапперы
 
 ## Задача
 
-Типы, константы, lib-модули и сервисы лежат каждый в своей папке с суффиксом в имени
-файла, и это проверяет ESLint, а не ревью.
+Типы, константы, lib-модули, сервисы и мапперы лежат каждый в своей папке с суффиксом в
+имени файла, и это проверяет ESLint, а не ревью.
 
 ## Прототип
 
@@ -22,6 +22,7 @@
   | `constants/` | `*.constant.ts`|
   | `lib/`       | `*.lib.ts`     |
   | `services/`  | `*.service.ts` |
+  | `mappers/`   | `*.mapper.ts`  |
 
   Единственное число в суффиксе. `index.ts` в каждой из папок — без суффикса, это
   публичный вход папки, а не её содержимое.
@@ -42,6 +43,14 @@
 - **Что такое lib и сервис, линтер не знает.** Он проверяет только, что `*.lib.ts`
   лежит в `lib/`, а в `lib/` лежат только `*.lib.ts` (и так же для сервисов). Решение
   «это lib или нет» — на ревью.
+- **`mappers/` и `*.mapper.ts` — пятый вид** (добавлен в #60,
+  `docs/specs/60-api-modules.md`). Мапперы отдельными файлами — человек, 2026-10-03;
+  имя папки и суффикса — предложение агента, не подтверждено человеком. Проверяется
+  так же, как lib и сервисы: только папка и суффикс. Что маппер — чистая функция и что
+  он в файле один, линтер не знает; правило — в `CLAUDE.md` §8, держит ревью.
+  *Цена:* плагин общий, поэтому имена `mappers/` и `*.mapper.ts` заняты во всех
+  пакетах сразу, а не только в `apps/api`; на момент добавления ни в `apps/web`, ни в
+  `packages/core` таких файлов и папок нет.
 - **Правило — локальный плагин ESLint без зависимостей**
   (`eslint.file-layout.js` в корне). Готовые плагины (`eslint-plugin-check-file`)
   проверяют только имя и папку, объявления — нет; их всё равно пришлось бы дописывать.
@@ -91,8 +100,8 @@
 
 - `BEHAVIOR_PRESERVED`: перенос не меняет поведения; тесты зелёные без правок логики —
   меняются только импорты и пути.
-- `FILE_IN_ITS_FOLDER`: файл `*.type.ts` / `*.constant.ts` / `*.lib.ts` / `*.service.ts`
-  лежит прямо в папке своего вида, а в папке вида лежат только файлы с её суффиксом и
+- `FILE_IN_ITS_FOLDER`: файл `*.type.ts` / `*.constant.ts` / `*.lib.ts` / `*.service.ts` /
+  `*.mapper.ts` лежит прямо в папке своего вида, а в папке вида лежат только файлы с её суффиксом и
   `index.ts`.
 - `TYPES_LIVE_IN_TYPE_FILES`: `type`, `interface`, `enum` объявляются только в
   `*.type.ts`.
@@ -105,6 +114,9 @@
 - [x] Given `types/zone.ts` Then lint красный (`FILE_IN_ITS_FOLDER`).
 - [x] Given `lib/zone.type.ts` Then lint красный (`FILE_IN_ITS_FOLDER`).
 - [x] Given `types/index.ts` Then lint зелёный.
+- [x] Given `fixture.mapper.ts` вне `mappers/`, либо `mappers/fixture.ts`, либо
+  `mappers/nested/fixture.mapper.ts` Then lint красный; Given `mappers/fixture.mapper.ts`
+  или `mappers/index.ts` Then lint зелёный (`FILE_IN_ITS_FOLDER`, добавлено в #60).
 - [x] Given `type X = …` в `zone.ts` Then lint красный (`TYPES_LIVE_IN_TYPE_FILES`).
 - [x] Given `export const Y = 1` в `types/x.type.ts` Then lint красный
   (`TYPE_FILES_HOLD_ONLY_TYPES`).

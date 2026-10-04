@@ -11,11 +11,12 @@ import { SEVERITY } from './constants/log-severity.constant';
 import type { LogLevel, LogPayload, Logger } from './types';
 
 /**
- * В разработке видно всё, в проде — только то, что требует внимания.
+ * В разработке видно всё, в проде — всё, кроме `debug`: `info` остаётся, чтобы по логу
+ * функции было видно не только сбой, но и что происходило перед ним.
  * Порог глобальный и меняется на лету: `setLogLevel` нужен и тестам,
  * и отладке прода без пересборки.
  */
-let threshold: LogLevel = import.meta.env.DEV ? 'debug' : 'warn';
+let threshold: LogLevel = import.meta.env.DEV ? 'debug' : 'info';
 
 export const setLogLevel = (level: LogLevel): void => {
   threshold = level;

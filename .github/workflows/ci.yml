@@ -39,5 +39,13 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Стенд базы для интеграционных тестов API (docs/specs/51-db-migrations.md):
+      # Postgres и прокси Neon, тот же compose-файл, что у разработчика. `--wait`
+      # возвращается, когда через прокси проходит запрос к базе.
+      - name: Database stand
+        run: docker compose -f apps/api/stand/docker-compose.yml up -d --wait
+
       - name: Test
         run: npm test
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@db.localtest.me:5432/main
