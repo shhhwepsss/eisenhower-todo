@@ -5,6 +5,7 @@
 - Требования: [`docs/PRD.md`](docs/PRD.md)
 - Архитектура и разбиение на фазы: [`docs/specs/4-architecture.md`](docs/specs/4-architecture.md)
 - Правила работы над проектом: [`CLAUDE.md`](CLAUDE.md)
+- Неочевидные места и почему они такие: [`docs/gotchas.md`](docs/gotchas.md)
 
 ## Стек
 
@@ -17,11 +18,31 @@ Vite + React + TypeScript (`strict`), Vitest, ESLint.
 ```bash
 npm install
 npm run dev      # дев-сервер apps/web; /api проксируется на dev-сервер API
-npm run dev:api  # дев-сервер apps/api на 127.0.0.1:8787 (во втором терминале)
+npm run dev:api  # дев-сервер apps/api на 127.0.0.1:8787 (во втором терминале);
+                 # окружение — apps/api/.env по образцу apps/api/.env.example
 npm run build    # проверка типов + продовая сборка
 npm run test     # тесты (vitest) каждого пакета
 npm run lint     # eslint, включая границы слоёв и пакетов
+npm run db:migrate  # применить миграции к базе из apps/api/.env
 ```
+
+### База
+
+Postgres у Neon через Drizzle ([`docs/specs/51-db-migrations.md`](docs/specs/51-db-migrations.md)).
+
+- Схема — `apps/api/src/db/schema.ts`. После её правки
+  `npm run db:generate --workspace=@eisenhower/api` кладёт новую миграцию в
+  `apps/api/drizzle/`; миграции лежат в git.
+- `npm run db:migrate` применяет миграции. На проде его запускает сборка Netlify после
+  `npm run build` (`netlify.toml`): упавшая миграция не даёт деплою опубликоваться. В
+  функцию миграции не попадают.
+- `/api/health` отвечает `200`, только если функция достаёт до базы и схема применена.
+- Интеграционные тесты базы идут против локального стенда и без него пропускаются:
+
+  ```bash
+  docker compose -f apps/api/stand/docker-compose.yml up -d --wait
+  TEST_DATABASE_URL=postgres://postgres:postgres@db.localtest.me:5432/main npm test
+  ```
 
 Те же `lint`, `build` и `test` гоняет CI (GitHub Actions, проверка `check`) на каждый PR и
 на каждый мерж в `production` — после `npm ci`, на Node 22

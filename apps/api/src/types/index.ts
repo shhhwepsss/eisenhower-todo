@@ -1,5 +1,13 @@
+export type { AppDeps } from './app-deps.type';
+export type { AppEnv } from './app-env.type';
+export type { DatabaseCheck } from './database-check.type';
+export type { DatabaseFailure } from './database-failure.type';
+export type { DatabaseProbe } from './database-probe.type';
+export type { EnvResult } from './env-result.type';
+export type { EnvSource } from './env-source.type';
+export type { Env } from './env.type';
 export type { ErrorBody } from './error-body.type';
-export type { HealthBody } from './health-body.type';
 export type { LogLevel } from './log-level.type';
-export type { Logger } from './logger.type';
 export type { LogPayload } from './log-payload.type';
+export type { Logger } from './logger.type';
+export type { SchemaMigrator } from './schema-migrator.type';

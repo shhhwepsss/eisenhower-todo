@@ -1,5 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { getRequestListener } from '@hono/node-server';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
+import type { MigrationMeta } from 'drizzle-orm/migrator';
+import { loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { defineConfig } from 'vitest/config';
 
@@ -12,6 +16,24 @@ type NodeListener = (incoming: IncomingMessage, outgoing: ServerResponse) => Pro
  * окружении сборки), локально — `dev`.
  */
 const BUILD_VERSION: string = process.env.COMMIT_REF ?? 'dev';
+
+/**
+ * Хеш последней миграции из `drizzle/` (docs/specs/51-db-migrations.md,
+ * SCHEMA_MATCHES_CODE); `null`, если миграций нет. Читает его тот же `readMigrationFiles`,
+ * что и migrator drizzle, — хеш в сборке и хеш в журнале базы считаются одним кодом. В
+ * функцию едет только этот хеш: по нему `/api/health` сверяет код с журналом, а сами
+ * файлы миграций остаются в репозитории.
+ *
+ * Читается при старте Vite: после `npm run db:generate` dev-сервер нужно перезапустить.
+ */
+const readLatestMigrationHash = (): string | null => {
+  const folderUrl: URL = new URL('./drizzle', import.meta.url);
+  const migrationsFolder: string = fileURLToPath(folderUrl);
+  const migrations: MigrationMeta[] = readMigrationFiles({ migrationsFolder });
+  return migrations.at(-1)?.hash ?? null;
+};
+
+const LATEST_MIGRATION_HASH: string | null = readLatestMigrationHash();
 
 /**
  * Dev-сервер API (docs/specs/50-api-skeleton.md, «Разработка»). Каждый запрос
@@ -34,11 +56,35 @@ const serveApi = (): Plugin => {
   };
 };
 
+/**
+ * Окружение dev-сервера из `apps/api/.env` (docs/specs/51-db-migrations.md). Vite отдаёт
+ * коду только `VITE_*` и только через `import.meta.env`, а API читает `process.env` —
+ * как на проде, где переменные кладёт туда Netlify. Заданное в процессе не
+ * перезаписывается: переменная из командной строки сильнее файла.
+ *
+ * В тестах не применяется: тест сам задаёт окружение, и `.env` разработчика не должен
+ * подменять ему «переменная не задана».
+ */
+const loadDotEnv = (): Plugin => {
+  return {
+    name: 'eisenhower:load-dot-env',
+    apply: 'serve',
+    configureServer: (server: ViteDevServer) => {
+      if (server.config.mode === 'test') return;
+      const fileEnv: Record<string, string> = loadEnv(server.config.mode, server.config.root, '');
+      for (const [name, value] of Object.entries(fileEnv)) {
+        process.env[name] ??= value;
+      }
+    },
+  };
+};
+
 export default defineConfig({
-  plugins: [serveApi()],
+  plugins: [loadDotEnv(), serveApi()],
   appType: 'custom',
   define: {
     __BUILD_VERSION__: JSON.stringify(BUILD_VERSION),
+    __LATEST_MIGRATION_HASH__: JSON.stringify(LATEST_MIGRATION_HASH),
   },
   server: {
     // Явный IPv4 — по той же причине, что в apps/web/vite.config.ts.
