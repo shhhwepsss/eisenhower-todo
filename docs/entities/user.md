@@ -3,6 +3,21 @@
 Состояние: **запланирована**, появляется в #52, фаза 1. Спека:
 `docs/specs/52-google-auth.md`.
 
+## Схема
+
+```mermaid
+flowchart LR
+    G["профиль Google<br/>name, email, picture"] -->|"первый вход:<br/>createUser"| U[("users")]
+    U -->|"повторный вход:<br/>getUserByAccount"| A["адаптер Auth.js"]
+    U -->|"id → sub"| J["JWT в cookie"]
+    J -->|"GET /api/me,<br/>проверка сессии"| ME["SessionUser<br/>id, name, email"]
+    U -->|"#46: tasks.user_id"| T[(tasks)]
+    ACC[(accounts)] -->|"user_id, ON DELETE CASCADE"| U
+```
+
+Пишет таблицу только адаптер Auth.js и только при первом входе. Всё, что происходит после
+входа, читает JWT, а не таблицу.
+
 ## Что это
 
 Человек, вошедший в приложение. Строку создаёт Auth.js при первом входе через Google;

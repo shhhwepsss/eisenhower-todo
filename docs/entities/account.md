@@ -3,6 +3,19 @@
 Состояние: **запланирована**, появляется в #52, фаза 1. Спека:
 `docs/specs/52-google-auth.md`.
 
+## Схема
+
+```mermaid
+flowchart LR
+    G["Google: provider = google,<br/>sub, токены"] --> Q{"getUserByAccount<br/>(provider, sub)"}
+    Q -->|"нашёлся"| OLD["вход: строка не меняется"]
+    Q -->|"нет"| NEW["createUser → linkAccount"]
+    NEW -->|"INSERT"| ACC[("accounts")]
+    ACC -->|"user_id"| U[("users")]
+```
+
+Читается и пишется только при входе. Код приложения к таблице не обращается.
+
 ## Что это
 
 Связь [пользователя](user.md) с его учётной записью у внешнего провайдера входа.

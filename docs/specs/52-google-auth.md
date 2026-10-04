@@ -1,5 +1,176 @@
 # #52 — Вход через Google на беке
 
+## Схемы
+
+Сначала картинки, потом текст: всё ниже в спеке — обоснование того, что нарисовано здесь.
+Зелёным — то, что появляется в этой задаче; серым — то, что уже есть.
+
+### 1. Где это живёт
+
+Один origin (#50): локально браузер ходит в API через прокси Vite, на проде — в функцию
+Netlify. Google и база — внешние.
+
+```mermaid
+flowchart LR
+    B([Браузер])
+    G[(Google OAuth)]
+    subgraph API["Hono, basePath /api"]
+        direction TB
+        ENV[requireEnv]
+        CFG[authConfig]
+        RS[requireSession]
+        subgraph R[маршруты модулей]
+            AUTH["/auth/* — Auth.js"]
+            HEALTH["/health"]
+            ME["/me"]
+        end
+        NF[404 notFound]
+        ENV --> CFG --> RS --> R
+        RS -.->|"нет обработчика"| NF
+    end
+    subgraph DB[Neon Postgres]
+        USERS[(users)]
+        ACC[(accounts)]
+        JOURNAL[(журнал миграций)]
+    end
+
+    B -->|"cookie сессии"| ENV
+    AUTH <-->|"OAuth: code → токены"| G
+    AUTH -->|"адаптер: только при входе"| USERS
+    AUTH -->|"адаптер: только при входе"| ACC
+    HEALTH --> JOURNAL
+    ME -.-|"в базу не ходит"| DB
+
+    classDef new fill:#d9f2d9,stroke:#2e7d32,color:#1b3d1b
+    classDef old fill:#eeeeee,stroke:#9e9e9e,color:#333333
+    class CFG,RS,AUTH,ME,USERS,ACC new
+    class ENV,HEALTH,NF,JOURNAL old
+```
+
+### 2. Что меняется в сборке приложения
+
+`apps/api/src/create-app.ts` — порядок вызовов. Остальная раскладка файлов — в
+«Раскладка» ниже.
+
+```diff
+ createApp(deps)
+   app.use('*', requireEnv)                 # окружение → c.var.env
++  app.use('*', authConfig(deps))           # конфиг Auth.js из env + адаптер из deps
++  app.use('*', requireSession)             # OPEN_ROUTES / 404 / 401 / c.var.sessionUser
++  registerAuthRoutes(app)                  # /api/auth/* → authHandler()
+   registerHealthRoutes(app, deps)
++  registerMeRoutes(app)                    # GET /api/me
+   app.notFound(respondNotFound)            # 404 {"error":"not_found"}
+   app.onError(respondInternalError)        # 500 {"error":"internal"}
+```
+
+### 3. Как `requireSession` решает судьбу запроса
+
+```mermaid
+flowchart TD
+    Q[запрос под /api] --> E{окружение разобрано?}
+    E -->|нет| E500["500 internal — ENV_FAILS_FAST"]
+    E -->|да| O{путь в OPEN_ROUTES?}
+    O -->|"да: /api/auth/*, /api/health"| H[обработчик]
+    O -->|нет| M{"matchedRoutes: есть обработчик,<br/>а не только middleware ALL?"}
+    M -->|нет| N404["404 not_found — UNKNOWN_PATH_IS_NOT_FOUND"]
+    M -->|да| S{"getAuthUser: JWT в cookie<br/>расшифрован?"}
+    S -->|нет| U401["401 unauthorized — AUTH_REQUIRED_BY_DEFAULT"]
+    S -->|да| SU["c.set('sessionUser', toSessionUser(authUser))"] --> H
+```
+
+Итог — таблица ответов. Это и есть контракт задачи; критерии приёмки ниже — её строки.
+
+| Запрос                    | Без сессии          | С сессией               |
+| ------------------------- | ------------------- | ----------------------- |
+| `GET /api/health`         | как до задачи       | как до задачи           |
+| `GET /api/auth/signin`    | страница Auth.js    | страница Auth.js        |
+| `GET /api/me`             | `401 unauthorized`  | `200 {id, name, email}` |
+| `POST /api/me`            | `404 not_found`     | `404 not_found`         |
+| `GET /api/nope`           | `404 not_found`     | `404 not_found`         |
+| новая ручка без правки `OPEN_ROUTES` | `401`    | обработчик              |
+| любой, окружение неполное | `500 internal`      | `500 internal`          |
+
+### 4. Вход через Google
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Браузер
+    participant A as API /api/auth/*
+    participant G as Google
+    participant D as База
+
+    B->>A: POST /api/auth/signin/google
+    A-->>B: 302 на Google, cookie state и pkce
+    B->>G: согласие пользователя
+    G-->>B: 302 /api/auth/callback/google?code
+    B->>A: GET /api/auth/callback/google?code
+    A->>G: обмен code на токены
+    A->>D: getUserByAccount(google, sub)
+    alt первый вход
+        A->>D: createUser, затем linkAccount
+    else повторный вход
+        Note over A,D: пользователь найден, в базу ничего не пишется
+    end
+    A-->>B: 302, Set-Cookie: HttpOnly-cookie сессии (JWT, sub = users.id)
+    B->>A: GET /api/me, браузер сам прикладывает cookie
+    Note over A: JWT расшифрован, база не нужна
+    A-->>B: 200 { id, name, email }
+```
+
+### 5. Откуда модуль знает, кто вошёл
+
+Поток данных о пользователе. Типы Auth.js заканчиваются на HTTP-краю
+(`AUTH_TYPES_STAY_AT_EDGE`): дальше `requireSession` идёт только наш `SessionUser`.
+
+```mermaid
+flowchart LR
+    P["профиль Google<br/>name, email, picture"] -->|createUser| U[("users<br/>id = UUID")]
+    U -->|"sub = users.id"| J["JWT в cookie<br/>sub, name, email, picture"]
+    J -->|"getAuthUser<br/>(@hono/auth-js)"| AU[AuthUser]
+    AU -->|toSessionUser| SU["SessionUser<br/>{ id, name, email }"]
+    SU -->|"c.var.sessionUser"| C[MeController]
+    C -->|toMeBody| R["200 { id, name, email }"]
+    SU -.->|"#46: фильтр задач<br/>по владельцу"| T[(tasks.user_id)]
+
+    subgraph EDGE["src/http/ — граница Auth.js"]
+        AU
+    end
+```
+
+### 6. Жизнь сессии
+
+Один JWT на 30 дней, без refresh-токена. Срок сдвигает только новый токен.
+
+```mermaid
+stateDiagram-v2
+    state "Нет сессии" as NoSession
+    state "Сессия: JWT в cookie" as Session
+    state "Новый JWT, срок с нуля" as Renewed
+    [*] --> NoSession
+    NoSession --> Session: вход через Google, JWT на 30 дней
+    Session --> Renewed: GET /api/auth/session
+    Renewed --> Session
+    Session --> Session: GET /api/me и прочие ручки, срок не двигается
+    Session --> NoSession: выход, cookie стёрта в этом браузере
+    Session --> NoSession: 30 дней без /api/auth/session
+    Session --> NoSession: смена AUTH_SECRET, все сессии разом
+```
+
+Отзыва одной сессии на сервере нет — см. риск 1.
+
+### 7. Фазы и ветки
+
+```mermaid
+flowchart LR
+    P0["Фаза 0: спека<br/>(этот файл)"] --> BASE
+    P1["Фаза 1: users, accounts,<br/>миграция, адаптер"] --> BASE
+    P2["Фаза 2: Auth.js, requireSession,<br/>OPEN_ROUTES, GET /api/me"] --> BASE
+    BASE[feature/52-google-auth] --> REL[release/backend]
+    P1 -.->|"адаптер нужен конфигу"| P2
+```
+
 ## Задача
 
 Дать API вход через Google и сессию в cookie так, чтобы любая зарегистрированная ручка,
@@ -204,31 +375,7 @@ apps/api/src/
 
 #### Поток входа
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant B as Браузер
-    participant A as API /api/auth/*
-    participant G as Google
-    participant D as База
-
-    B->>A: POST /api/auth/signin/google
-    A-->>B: 302 на Google, cookie state и pkce
-    B->>G: согласие пользователя
-    G-->>B: 302 /api/auth/callback/google?code
-    B->>A: GET /api/auth/callback/google?code
-    A->>G: обмен code на токены
-    A->>D: getUserByAccount(google, sub)
-    alt первый вход
-        A->>D: createUser, затем linkAccount
-    else повторный вход
-        Note over A,D: пользователь найден, в базу ничего не пишется
-    end
-    A-->>B: 302, Set-Cookie: HttpOnly-cookie сессии (JWT, sub = users.id)
-    B->>A: GET /api/me, браузер сам прикладывает cookie
-    Note over A: JWT расшифрован, база не нужна
-    A-->>B: 200 { id, name, email }
-```
+Диаграмма — «Схемы», п. 4.
 
 #### Конкурентность
 

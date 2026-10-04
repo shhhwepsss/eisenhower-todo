@@ -3,6 +3,15 @@
 Состояние: **в схеме** (`apps/api/src/db/schema.ts:11-14`, миграция
 `apps/api/drizzle/0000_app_meta.sql`). Спека: `docs/specs/51-db-migrations.md`.
 
+## Схема
+
+```mermaid
+flowchart LR
+    M["npm run db:migrate<br/>миграция 0000_app_meta"] -->|"CREATE TABLE"| T[("app_meta<br/>пусто")]
+    H["GET /api/health"] -->|"сверяет"| J[("drizzle.__drizzle_migrations")]
+    H -.-x|"не читает"| T
+```
+
 ## Что это
 
 Служебная таблица «ключ — значение». Заведена, чтобы у конвейера миграций была первая
