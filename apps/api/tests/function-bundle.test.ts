@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'vite';
+import { stubAuthEnv } from './fixtures/auth';
 
 /**
  * FUNCTION_IS_SELF_CONTAINED (docs/specs/50-api-skeleton.md): бандлер функций Netlify
@@ -65,6 +66,7 @@ describe('FUNCTION_IS_SELF_CONTAINED', () => {
     await mkdir(distDir, { recursive: true });
     tempDir = await mkdtemp(join(distDir, 'test-bundle-'));
     vi.stubEnv('DATABASE_URL', 'postgresql://user:secret@ep-test.neon.tech/neondb');
+    stubAuthEnv();
   });
 
   afterAll(async () => {

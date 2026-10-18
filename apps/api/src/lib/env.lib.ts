@@ -1,9 +1,15 @@
 import type { z } from 'zod';
-import { ENV_SCHEMA } from '../constants/env-schema.constant';
-import type { Env, EnvResult, EnvSource } from '../types';
+import { ENV_SCHEMA, MIGRATION_ENV_SCHEMA } from '../constants/env-schema.constant';
+import type { Env, EnvResult, EnvSource, MigrationEnv, MigrationEnvResult } from '../types';
 
 /** Имя переменной, на которой споткнулась проверка: первый элемент пути ошибки. */
 const variableOf = (issue: z.core.$ZodIssue): string => String(issue.path[0]);
+
+/** Имена переменных, не прошедших проверку, без повторов и без значений. */
+const namesOf = (error: z.ZodError): string[] => {
+  const named: string[] = error.issues.map(variableOf);
+  return [...new Set(named)];
+};
 
 /**
  * Разбор окружения по `ENV_SCHEMA` (ENV_FAILS_FAST). Чистая функция от источника,
@@ -12,8 +18,19 @@ const variableOf = (issue: z.core.$ZodIssue): string => String(issue.path[0]);
 export const parseEnv = (source: EnvSource): EnvResult => {
   const parsed: z.ZodSafeParseResult<Env> = ENV_SCHEMA.safeParse(source);
   if (parsed.success) return { ok: true, env: parsed.data };
-  const named: string[] = parsed.error.issues.map(variableOf);
-  const variables: string[] = [...new Set(named)];
+  const variables: string[] = namesOf(parsed.error);
+  return { ok: false, variables };
+};
+
+/**
+ * Разбор окружения прогона миграций по `MIGRATION_ENV_SCHEMA`: скрипту `db:migrate` нужна
+ * только база, секреты входа сборке и CI не нужны. Не запоминается — скрипт читает
+ * окружение один раз.
+ */
+export const parseMigrationEnv = (source: EnvSource): MigrationEnvResult => {
+  const parsed: z.ZodSafeParseResult<MigrationEnv> = MIGRATION_ENV_SCHEMA.safeParse(source);
+  if (parsed.success) return { ok: true, env: parsed.data };
+  const variables: string[] = namesOf(parsed.error);
   return { ok: false, variables };
 };
 

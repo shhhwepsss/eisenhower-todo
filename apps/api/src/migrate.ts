@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { NeonSchemaMigrator } from './db/neon/neon-schema-migrator';
-import { readEnv } from './lib/env.lib';
+import { parseMigrationEnv } from './lib/env.lib';
 import { createLog } from './logger';
-import type { EnvResult, Logger, SchemaMigrator } from './types';
+import type { Logger, MigrationEnvResult, SchemaMigrator } from './types';
 
 /**
  * Прогон миграций — тело команды `npm run db:migrate` (docs/specs/51-db-migrations.md).
@@ -15,7 +15,7 @@ import type { EnvResult, Logger, SchemaMigrator } from './types';
 const log: Logger = createLog('api/migrate');
 
 export const runMigrations = async (): Promise<void> => {
-  const result: EnvResult = readEnv();
+  const result: MigrationEnvResult = parseMigrationEnv(process.env);
   if (!result.ok) {
     const variables: string = result.variables.join(', ');
     throw new Error(`окружение не разобрано: ${variables}`);

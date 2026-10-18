@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,19 @@ export type Row = Record<string, unknown>;
 type JournalEntry = { idx: number; version: string; when: number; tag: string; breakpoints: boolean };
 
 type Journal = { version: string; dialect: string; entries: JournalEntry[] };
+
+const readMigrationCount = (): number => {
+  const journalPath: string = join(MIGRATIONS_FOLDER, 'meta', '_journal.json');
+  const journalText: string = readFileSync(journalPath, 'utf8');
+  const journal: Journal = JSON.parse(journalText) as Journal;
+  return journal.entries.length;
+};
+
+/**
+ * Сколько миграций в `apps/api/drizzle/`. Тесты сверяют журнал базы с этим числом, а не
+ * с константой: новая миграция не должна ломать тесты migrator.
+ */
+export const MIGRATION_COUNT: number = readMigrationCount();
 
 /**
  * Адрес стенда; вызывается только из тестов, которые без стенда пропущены.

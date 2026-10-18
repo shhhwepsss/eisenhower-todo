@@ -9,6 +9,7 @@ import { NeonDatabaseProbe } from '../src/db/neon/neon-database-probe';
 import type { DatabaseCheck, DatabaseProbe, SchemaMigrator } from '../src/types';
 import {
   MIGRATIONS_FOLDER,
+  MIGRATION_COUNT,
   STAND_URL,
   addMigration,
   copyMigrations,
@@ -93,7 +94,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     const hasAppMeta: boolean = await tableExists('app_meta');
 
     expect(hasAppMeta).toBe(true);
-    expect(journal).toHaveLength(1);
+    expect(journal).toHaveLength(MIGRATION_COUNT);
   });
 
   it('MIGRATIONS_ARE_IDEMPOTENT: повторный прогон не меняет журнал', async () => {
@@ -114,7 +115,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     await Promise.all([first.migrate(), second.migrate()]);
     const journal: Row[] = await readJournal();
 
-    expect(journal).toHaveLength(1);
+    expect(journal).toHaveLength(MIGRATION_COUNT);
   });
 
   it('MIGRATION_IS_SERIALIZED: пока блокировка занята, прогон ждёт и ничего не применяет', async () => {
@@ -134,7 +135,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
 
     expect(finishedWhileLocked).toBe(false);
     expect(journalWhileLocked).toEqual([]);
-    expect(journal).toHaveLength(1);
+    expect(journal).toHaveLength(MIGRATION_COUNT);
   });
 
   it('NO_MIGRATION_IS_SKIPPED: миграция с меткой времени старше применённой — прогон падает', async () => {
@@ -186,7 +187,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     const journal: Row[] = await readJournal();
     const hasBrokenOk: boolean = await tableExists('broken_ok');
 
-    expect(journal).toHaveLength(2);
+    expect(journal).toHaveLength(MIGRATION_COUNT + 1);
     expect(hasBrokenOk).toBe(true);
   });
 
@@ -200,7 +201,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     await healthy.migrate();
     const journal: Row[] = await readJournal();
 
-    expect(journal).toHaveLength(1);
+    expect(journal).toHaveLength(MIGRATION_COUNT);
   });
 
   it('SCHEMA_MATCHES_CODE: базу не мигрировали — schema_behind, после миграции — ok', async () => {
@@ -268,7 +269,7 @@ describe.skipIf(!HAS_STAND)('миграции на стенде', () => {
     const journal: Row[] = await readJournal();
 
     expect(run.code).toBe(0);
-    expect(journal).toHaveLength(1);
+    expect(journal).toHaveLength(MIGRATION_COUNT);
   }, 30_000);
 
   it('FAILED_MIGRATION_FAILS_BUILD: база отказала — код выхода не 0, ошибка в логе', async () => {

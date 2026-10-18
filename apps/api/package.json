@@ -12,7 +12,10 @@
     "db:migrate": "node scripts/migrate.js"
   },
   "dependencies": {
+    "@auth/core": "0.41.3",
+    "@auth/drizzle-adapter": "^1.11.3",
     "@eisenhower/core": "*",
+    "@hono/auth-js": "1.1.1",
     "@neondatabase/serverless": "^1.2.0",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.12",

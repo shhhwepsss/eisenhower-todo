@@ -32,6 +32,9 @@ const DRIZZLE_MIGRATOR_CODE: string =
 const NEON_CODE: string =
   "import { neon } from '@neondatabase/serverless';\nexport const connect = neon;\n";
 
+const AUTH_ADAPTER_CODE: string =
+  "import { DrizzleAdapter } from '@auth/drizzle-adapter';\nexport const adapt = DrizzleAdapter;\n";
+
 describe('DB_BEHIND_INTERFACE', () => {
   it('запрещает drizzle-orm в src/ вне src/db/', async () => {
     const messages: Linter.LintMessage[] = await lintAs('src/create-app.ts', DRIZZLE_CODE);
@@ -58,6 +61,14 @@ describe('DB_BEHIND_INTERFACE', () => {
     const messages: Linter.LintMessage[] = await lintAs('functions/fixture.ts', NEON_CODE);
 
     expect(ruleIds(messages)).toContain(DB_BEHIND_INTERFACE);
+  });
+
+  it('запрещает адаптер Auth.js к Drizzle вне src/db/ и разрешает в src/db/', async () => {
+    const outside: Linter.LintMessage[] = await lintAs('src/create-app.ts', AUTH_ADAPTER_CODE);
+    const inside: Linter.LintMessage[] = await lintAs('src/db/fixture.ts', AUTH_ADAPTER_CODE);
+
+    expect(ruleIds(outside)).toContain(DB_BEHIND_INTERFACE);
+    expect(ruleIds(inside)).not.toContain(DB_BEHIND_INTERFACE);
   });
 
   it('разрешает оба пакета в src/db/', async () => {
