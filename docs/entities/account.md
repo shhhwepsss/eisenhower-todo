@@ -1,7 +1,7 @@
 # Аккаунт — `accounts`
 
-Состояние: **запланирована**, появляется в #52, фаза 1. Спека:
-`docs/specs/52-google-auth.md`.
+Состояние: **в схеме** (`apps/api/src/db/schema.ts`, миграция
+`apps/api/drizzle/0001_users_accounts.sql`). Спека: `docs/specs/52-google-auth.md`.
 
 ## Схема
 

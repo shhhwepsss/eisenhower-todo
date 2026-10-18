@@ -4,9 +4,9 @@ import { baseConfig, noEmptyCatch } from '../../eslint.config.base.js';
 import { moduleBoundariesPlugin } from './eslint.module-boundaries.js';
 
 const DB_BEHIND_INTERFACE =
-  'DB_BEHIND_INTERFACE (docs/specs/51-db-migrations.md): Drizzle и драйвер Neon ' +
-  'импортируются только в src/db/. Остальной код зависит от интерфейсов из types/ — ' +
-  'реализацию базы можно заменить, не трогая приложение.';
+  'DB_BEHIND_INTERFACE (docs/specs/51-db-migrations.md): Drizzle, драйвер Neon и ' +
+  'адаптер Auth.js к Drizzle импортируются только в src/db/. Остальной код зависит от ' +
+  'интерфейсов из types/ — реализацию базы можно заменить, не трогая приложение.';
 
 const HTTP_STAYS_AT_EDGE =
   'HTTP_STAYS_AT_EDGE (docs/specs/60-api-modules.md): Hono импортируется только на ' +
@@ -14,7 +14,14 @@ const HTTP_STAYS_AT_EDGE =
   'Use-case, сервисы и слой базы о запросе и ответе не знают.';
 
 const DB_PACKAGES = {
-  group: ['drizzle-orm', 'drizzle-orm/*', '@neondatabase/serverless', '@neondatabase/serverless/*'],
+  group: [
+    'drizzle-orm',
+    'drizzle-orm/*',
+    '@neondatabase/serverless',
+    '@neondatabase/serverless/*',
+    '@auth/drizzle-adapter',
+    '@auth/drizzle-adapter/*',
+  ],
   message: DB_BEHIND_INTERFACE,
 };
 
