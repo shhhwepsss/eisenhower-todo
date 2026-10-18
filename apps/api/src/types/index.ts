@@ -1,5 +1,6 @@
 export type { AppDeps } from './app-deps.type';
 export type { AppEnv } from './app-env.type';
+export type { AuthAdapter } from './auth-adapter.type';
 export type { DatabaseCheck } from './database-check.type';
 export type { DatabaseFailure } from './database-failure.type';
 export type { DatabaseProbe } from './database-probe.type';
@@ -10,4 +11,8 @@ export type { ErrorBody } from './error-body.type';
 export type { LogLevel } from './log-level.type';
 export type { LogPayload } from './log-payload.type';
 export type { Logger } from './logger.type';
+export type { MigrationEnvResult } from './migration-env-result.type';
+export type { MigrationEnv } from './migration-env.type';
+export type { OpenRoute } from './open-route.type';
 export type { SchemaMigrator } from './schema-migrator.type';
+export type { SessionUser } from './session-user.type';

@@ -13,6 +13,11 @@ const HTTP_STAYS_AT_EDGE =
   'HTTP-краю — в сборке приложения, src/http/ и в *.controller.ts / *.routes.ts модуля. ' +
   'Use-case, сервисы и слой базы о запросе и ответе не знают.';
 
+const AUTH_TYPES_STAY_AT_EDGE =
+  'AUTH_TYPES_STAY_AT_EDGE (docs/specs/52-google-auth.md): Auth.js импортируется только ' +
+  'в src/http/, в auth.routes.ts, в слое базы (типы адаптера) и в types/auth-adapter.type.ts. ' +
+  'Модули получают SessionUser, а не типы и конфиг Auth.js.';
+
 const DB_PACKAGES = {
   group: [
     'drizzle-orm',
@@ -25,10 +30,61 @@ const DB_PACKAGES = {
   message: DB_BEHIND_INTERFACE,
 };
 
+// `@hono/auth-js` — пакет экосистемы Hono: слой базы и use-case о нём не знают.
 const HTTP_PACKAGES = {
-  group: ['hono', 'hono/*'],
+  group: ['hono', 'hono/*', '@hono/auth-js', '@hono/auth-js/*'],
   message: HTTP_STAYS_AT_EDGE,
 };
+
+const AUTH_PACKAGES = {
+  group: ['@auth/core', '@auth/core/*', '@hono/auth-js', '@hono/auth-js/*'],
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+/**
+ * `@hono/auth-js` расширяет переменные контекста Hono для всего проекта: `authConfig` (с
+ * секретом) и `authUser` достаются из контекста без единого импорта, и запрет импорта
+ * этого не видит. Поэтому обращение к ним по имени запрещено отдельно.
+ */
+const AUTH_CONTEXT_VARIABLE = /^auth(Config|User)$/;
+
+const authContextGet = {
+  selector: `CallExpression[callee.property.name=/^(get|set)$/][arguments.0.value=${AUTH_CONTEXT_VARIABLE}]`,
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+const authContextVar = {
+  selector: `MemberExpression[object.property.name='var'][property.name=${AUTH_CONTEXT_VARIABLE}]`,
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+// `context.var['authConfig']` и `` context.get(`authConfig`) `` — те же обращения другой записью.
+const authContextComputed = {
+  selector: `MemberExpression[object.property.name='var'][property.value=${AUTH_CONTEXT_VARIABLE}]`,
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+const authContextTemplate = {
+  selector: `CallExpression[callee.property.name=/^(get|set)$/][arguments.0.quasis.0.value.raw=${AUTH_CONTEXT_VARIABLE}]`,
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+// `const { authConfig } = context.var` — деструктуризация.
+const authContextPattern = {
+  selector: `VariableDeclarator[init.property.name='var'] > ObjectPattern > Property[key.name=${AUTH_CONTEXT_VARIABLE}]`,
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+const AUTH_CONTEXT_RULES = [authContextGet, authContextVar, authContextComputed, authContextTemplate, authContextPattern];
+
+/** В типе адаптера нужен только контракт адаптера, а не весь `@auth/core`. */
+const AUTH_PACKAGES_EXCEPT_ADAPTERS = {
+  regex: '^@auth/core(?!/adapters$)(/|$)',
+  message: AUTH_TYPES_STAY_AT_EDGE,
+};
+
+/** Где Auth.js разрешён целиком: общий HTTP-край и ручки самой библиотеки. */
+const AUTH_EDGE_FILES = ['src/http/**/*.ts', 'src/modules/auth/auth.routes.ts'];
 
 const HTTP_EDGE_FILES = [
   'src/app.ts',
@@ -64,10 +120,19 @@ export default tseslint.config(
   },
 
   {
+    // AUTH_TYPES_STAY_AT_EDGE: переменные контекста Auth.js — только в src/http/.
+    files: ['src/**/*.ts', 'functions/**/*.ts'],
+    ignores: ['src/http/**'],
+    rules: {
+      'no-restricted-syntax': ['error', noEmptyCatch, ...AUTH_CONTEXT_RULES],
+    },
+  },
+
+  {
     // Базовое `no-restricted-imports`, а не `@typescript-eslint/…`: второе занято
     // границами пакетов в базе, и объект с тем же правилом стёр бы их настройки
     // (eslint.config.base.js). Это имя в apps/api теперь тоже занято: запрет импорта
-    // дописывается в один из трёх объектов ниже, а не заводится ещё одним. Объекты
+    // дописывается в один из объектов ниже, а не заводится ещё одним. Объекты
     // перекрываются по файлам, и поздний заменяет настройки раннего целиком — поэтому
     // каждый перечисляет все свои запреты сам.
     //
@@ -75,20 +140,37 @@ export default tseslint.config(
     files: ['src/**/*.ts', 'functions/**/*.ts'],
     ignores: ['src/db/**'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [DB_PACKAGES, HTTP_PACKAGES] }],
+      'no-restricted-imports': ['error', { patterns: [DB_PACKAGES, HTTP_PACKAGES, AUTH_PACKAGES] }],
     },
   },
 
   {
-    // HTTP-край (HTTP_STAYS_AT_EDGE): Hono здесь разрешён, база — по-прежнему нет.
+    // Тип адаптера Auth.js — контракт, за которым стоит реализация в src/db/.
+    files: ['src/types/auth-adapter.type.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [DB_PACKAGES, HTTP_PACKAGES, AUTH_PACKAGES_EXCEPT_ADAPTERS] }],
+    },
+  },
+
+  {
+    // HTTP-край (HTTP_STAYS_AT_EDGE): Hono здесь разрешён, база и Auth.js — нет.
     files: HTTP_EDGE_FILES,
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [DB_PACKAGES, AUTH_PACKAGES] }],
+    },
+  },
+
+  {
+    // Край Auth.js (AUTH_TYPES_STAY_AT_EDGE): Hono и Auth.js разрешены, база — нет.
+    files: AUTH_EDGE_FILES,
     rules: {
       'no-restricted-imports': ['error', { patterns: [DB_PACKAGES] }],
     },
   },
 
   {
-    // Слой базы: Drizzle и Neon здесь разрешены, Hono — нет.
+    // Слой базы: Drizzle, Neon и типы адаптера `@auth/core` здесь разрешены, Hono и
+    // `@hono/auth-js` — нет.
     files: ['src/db/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [HTTP_PACKAGES] }],

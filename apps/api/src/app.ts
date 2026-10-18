@@ -1,8 +1,9 @@
 import type { Hono } from 'hono';
 import { LATEST_MIGRATION_HASH } from './constants/latest-migration-hash.constant';
 import { createApp } from './create-app';
+import { createNeonAuthAdapter } from './db/neon/neon-auth-adapter';
 import { NeonDatabaseProbe } from './db/neon/neon-database-probe';
-import type { AppEnv, DatabaseProbe, Env } from './types';
+import type { AppEnv, AuthAdapter, DatabaseProbe, Env } from './types';
 
 /**
  * Приложение API с настоящими зависимостями. Одно на функцию Netlify и на dev-сервер:
@@ -16,4 +17,6 @@ const createDatabaseProbe = (env: Env): DatabaseProbe => {
   return new NeonDatabaseProbe(env.DATABASE_URL, LATEST_MIGRATION_HASH);
 };
 
-export const app: Hono<AppEnv> = createApp({ createDatabaseProbe });
+const createAuthAdapter = (env: Env): AuthAdapter => createNeonAuthAdapter(env.DATABASE_URL);
+
+export const app: Hono<AppEnv> = createApp({ createDatabaseProbe, createAuthAdapter });

@@ -1,7 +1,8 @@
 import type { Hono } from 'hono';
 import { createApp } from '../src/create-app';
 import { forgetEnv } from '../src/lib/env.lib';
-import type { AppEnv, DatabaseCheck, DatabaseProbe, Env } from '../src/types';
+import type { AppEnv, AuthAdapter, DatabaseCheck, DatabaseProbe, Env } from '../src/types';
+import { createUnreachableAdapter, stubAuthEnv } from './fixtures/auth';
 
 /**
  * Приложение API с подставной проверкой базы (docs/specs/50-api-skeleton.md,
@@ -17,9 +18,11 @@ const createProbe = (check: DatabaseCheck): DatabaseProbe => {
   return { check: async () => check };
 };
 
+/** `/api/health` адаптер входа не трогает — подходит и адаптер недоступной базы. */
+const createAuthAdapter = (): AuthAdapter => createUnreachableAdapter().adapter;
 
 const createTestApp = (check: DatabaseCheck): Hono<AppEnv> => {
-  return createApp({ createDatabaseProbe: () => createProbe(check) });
+  return createApp({ createDatabaseProbe: () => createProbe(check), createAuthAdapter });
 };
 
 /** Ответ API на запрос к пути под `/api`. */
@@ -30,6 +33,7 @@ const requestApi = async (app: Hono<AppEnv>, path: string): Promise<Response> =>
 
 beforeEach(() => {
   vi.stubEnv('DATABASE_URL', DATABASE_URL);
+  stubAuthEnv();
   forgetEnv();
 });
 
@@ -52,11 +56,11 @@ describe('API', () => {
 
   it('проверка базы получает адрес из разобранного окружения', async () => {
     const createDatabaseProbe: (env: Env) => DatabaseProbe = vi.fn(() => createProbe(HEALTHY));
-    const app: Hono<AppEnv> = createApp({ createDatabaseProbe });
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe, createAuthAdapter });
 
     await requestApi(app, '/api/health');
 
-    expect(createDatabaseProbe).toHaveBeenCalledWith({ DATABASE_URL });
+    expect(createDatabaseProbe).toHaveBeenCalledWith(expect.objectContaining({ DATABASE_URL }));
   });
 
   it('DATABASE_FAILURE_IS_REPORTED: база отказала — 500 без текста ошибки, ошибка в логе', async () => {
@@ -91,7 +95,7 @@ describe('API', () => {
 
   it('проверка идёт на каждом запросе: результат не запоминается', async () => {
     const check: () => Promise<DatabaseCheck> = vi.fn(async () => HEALTHY);
-    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }) });
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }), createAuthAdapter });
 
     await requestApi(app, '/api/health');
     await requestApi(app, '/api/health');
@@ -118,7 +122,7 @@ describe('API', () => {
     const check: () => Promise<DatabaseCheck> = async () => {
       throw cause;
     };
-    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }) });
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe: () => ({ check }), createAuthAdapter });
     const consoleError: ReturnType<typeof vi.spyOn> = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const response: Response = await requestApi(app, '/api/health');
@@ -168,7 +172,7 @@ describe('API', () => {
     vi.stubEnv('DATABASE_URL', undefined);
     forgetEnv();
     const createDatabaseProbe: (env: Env) => DatabaseProbe = vi.fn(() => createProbe(HEALTHY));
-    const app: Hono<AppEnv> = createApp({ createDatabaseProbe });
+    const app: Hono<AppEnv> = createApp({ createDatabaseProbe, createAuthAdapter });
     const consoleError: ReturnType<typeof vi.spyOn> = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const response: Response = await requestApi(app, '/api/health');

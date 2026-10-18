@@ -1,7 +1,7 @@
-import type { Adapter } from '@auth/core/adapters';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { drizzle } from 'drizzle-orm/neon-http';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import type { AuthAdapter } from '../../types';
 import { accounts, users } from '../schema';
 import { configureNeonFor } from './neon-stand';
 
@@ -15,7 +15,7 @@ import { configureNeonFor } from './neon-stand';
  *
  * Соединения нет: каждый запрос — отдельный HTTP-вызов, объект ничего не держит.
  */
-export const createNeonAuthAdapter = (databaseUrl: string): Adapter => {
+export const createNeonAuthAdapter = (databaseUrl: string): AuthAdapter => {
   configureNeonFor(databaseUrl);
   const db: NeonHttpDatabase = drizzle(databaseUrl);
   return DrizzleAdapter(db, { usersTable: users, accountsTable: accounts });

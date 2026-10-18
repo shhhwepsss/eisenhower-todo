@@ -70,13 +70,13 @@ flowchart LR
 flowchart TD
     Q[запрос под /api] --> E{окружение разобрано?}
     E -->|нет| E500["500 internal — ENV_FAILS_FAST"]
-    E -->|да| O{путь в OPEN_ROUTES?}
-    O -->|"да: /api/auth/*, /api/health"| H[обработчик]
-    O -->|нет| M{"matchedRoutes: есть обработчик,<br/>а не только middleware ALL?"}
+    E -->|да| M{"matchedRoutes: есть маршрут,<br/>кроме ALL /api/*?"}
     M -->|нет| N404["404 not_found — UNKNOWN_PATH_IS_NOT_FOUND"]
-    M -->|да| S{"getAuthUser: JWT в cookie<br/>расшифрован?"}
+    M -->|да| O{"каждый совпавший маршрут<br/>в OPEN_ROUTES?"}
+    O -->|"да: /api/auth/*, /api/health"| H[обработчик]
+    O -->|нет| S{"getAuthUser: в JWT<br/>есть sub?"}
     S -->|нет| U401["401 unauthorized — AUTH_REQUIRED_BY_DEFAULT"]
-    S -->|да| SU["c.set('sessionUser', toSessionUser(authUser))"] --> H
+    S -->|да| SU["c.set('sessionUser', toSessionUser(token))"] --> H
 ```
 
 Итог — таблица ответов. Это и есть контракт задачи; критерии приёмки ниже — её строки.
@@ -437,6 +437,52 @@ apps/api/src/
 - **In-memory состояния нет:** сессия целиком в cookie, конфиг собирается на запрос.
 - **Повтор запроса:** `GET /api/me` ничего не пишет; повторный вход записей не создаёт.
 
+### Решения агента в фазе 2 — ждут подтверждения человека
+
+Приняты по ходу реализации, в спеке до фазы 2 их не было.
+
+1. **`db:migrate` проверяет только `DATABASE_URL`** (`MIGRATION_ENV_SCHEMA`,
+   `apps/api/src/constants/env-schema.constant.ts`). `ENV_SCHEMA` его расширяет
+   переменными входа. Иначе сборке Netlify и CI понадобились бы секреты входа ради
+   миграций: тест `FAILED_MIGRATION_FAILS_BUILD` запускает скрипт без них.
+2. **Auth.js — отдельная группа линта `AUTH_PACKAGES`** (пункт 3 ревью архитектора). Это
+   отступление от записанного выше «расширением существующих групп, новых инвариантов
+   не заводится»: инвариант `AUTH_TYPES_STAY_AT_EDGE` в спеке уже был, теперь его держит
+   линтер.
+   `@hono/auth-js` разрешён только в `src/http/` и `modules/auth/auth.routes.ts`, а не на
+   всём HTTP-краю: контроллеры модулей его не импортируют. `@auth/core` разрешён в
+   `src/http/`, `src/db/` и `src/types/auth-adapter.type.ts`. `@hono/auth-js` вдобавок
+   входит в `HTTP_PACKAGES`, поэтому в `src/db/` он тоже запрещён.
+3. **`OPEN_ROUTES` хранит пары «метод + путь» так, как они зарегистрированы в Hono**
+   (`GET /api/health`, `GET` и `POST /api/auth/*`). `requireSession` сверяет с ними
+   совпавшие маршруты, а не адрес запроса, поэтому свой разбор пути не нужен. Запрос
+   открыт, только если открыт **каждый** совпавший обработчик. Метод в паре — после
+   механического ревью: по одному пути `app.post('/health', …)` открылся бы без сессии.
+4. **Записи Auth.js — в наш логгер** (область `api/auth`). Ошибки, которые вызвал
+   клиент (`AUTH_CLIENT_ERRORS`: испорченная cookie, неизвестное действие, отказ в
+   согласии…), — `warn` с типом; остальные — `error` с типом и текстом. Без `cause`:
+   у ошибок колбэка в нём ответ Google. **`logger.debug` не передаётся:** переданный, он
+   включает отладку Auth.js даже без `config.debug` (`@auth/core/lib/utils/logger.js:40-47`),
+   а в её записи уходят секрет клиента Google, токены и cookie. Найдено механическим
+   ревью, держится тестом.
+5. **Пустой `sessionUser` в `MeController` — исключение и `500`.** До ручки без сессии
+   `requireSession` не пропускает, так что такое бывает только при сломанном порядке
+   middleware.
+6. **Пути API — константы `constants/api-paths.constant.ts`** (`/api`, `/auth`, `/api/auth`,
+   `/api/*`). Из них собраны `basePath`, маршрут Auth.js, `OPEN_ROUTES`, признак
+   глобального middleware и проверка `AUTH_URL`.
+
+Не поправлено после механического ревью — сознательно:
+
+- `context.get(KEY)` с ключом в переменной линт не ловит. Ловятся литерал, шаблонная
+  строка, `context.var.x`, `context.var['x']` и деструктуризация.
+- `parseEnv` и `parseMigrationEnv` устроены одинаково. Обобщать их до третьей схемы не
+  стал.
+- `AuthAdapter` объявлен через `type`, а не `interface`: пустой `interface … extends
+  Adapter {}` запрещает `@typescript-eslint/no-empty-object-type`.
+- Адаптер создаётся на каждый запрос, в том числе на `/api/health`. В базу он при этом
+  не ходит — только создаёт объект Drizzle.
+
 ### Риски — приняты человеком 2026-10-18
 
 Записаны агентом; человек принял все шесть как записаны.
@@ -519,27 +565,27 @@ apps/api/src/
 
 ## Критерии приёмки
 
-- [ ] Given нет cookie When `GET /api/me` Then `401 {"error":"unauthorized"}`.
-- [ ] Given cookie с испорченной подписью или подписанная другим секретом When
+- [x] Given нет cookie When `GET /api/me` Then `401 {"error":"unauthorized"}`.
+- [x] Given cookie с испорченной подписью или подписанная другим секретом When
   `GET /api/me` Then `401`.
-- [ ] Given просроченная cookie When `GET /api/me` Then `401`.
-- [ ] Given валидная cookie When `GET /api/me` Then `200` с `id`, `name`, `email`; других
+- [x] Given просроченная cookie When `GET /api/me` Then `401`.
+- [x] Given валидная cookie When `GET /api/me` Then `200` с `id`, `name`, `email`; других
   полей в теле нет.
-- [ ] Given валидная cookie и недоступная база When `GET /api/me` Then `200`.
-- [ ] Given нет cookie When `GET /api/health` Then ответ как до задачи.
-- [ ] Given нет cookie When `GET /api/auth/signin` Then не `401`.
-- [ ] Given нет cookie When запрос на неизвестный путь Then `404 {"error":"not_found"}`.
-- [ ] Given валидная cookie When запрос на неизвестный путь Then `404
+- [x] Given валидная cookie и недоступная база When `GET /api/me` Then `200`.
+- [x] Given нет cookie When `GET /api/health` Then ответ как до задачи.
+- [x] Given нет cookie When `GET /api/auth/signin` Then не `401`.
+- [x] Given нет cookie When запрос на неизвестный путь Then `404 {"error":"not_found"}`.
+- [x] Given валидная cookie When запрос на неизвестный путь Then `404
   {"error":"not_found"}`.
-- [ ] Given нет cookie When `POST /api/health` или `POST /api/me` Then `404`.
-- [ ] Given валидная cookie When `GET /api/auth/session` Then в ответе `Set-Cookie` с
+- [x] Given нет cookie When `POST /api/health` или `POST /api/me` Then `404`.
+- [x] Given валидная cookie When `GET /api/auth/session` Then в ответе `Set-Cookie` с
   новым JWT; When `GET /api/me` Then `Set-Cookie` сессии в ответе нет.
-- [ ] Given тестовая ручка, зарегистрированная без записи в `OPEN_ROUTES` Then без сессии
+- [x] Given тестовая ручка, зарегистрированная без записи в `OPEN_ROUTES` Then без сессии
   `401`.
-- [ ] Given не задана любая из `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID`,
+- [x] Given не задана любая из `AUTH_SECRET`, `AUTH_URL`, `AUTH_GOOGLE_ID`,
   `AUTH_GOOGLE_SECRET` When запрос Then `500 {"error":"internal"}`, в логе — имя
   переменной.
-- [ ] Given `AUTH_URL` с `https` When Auth.js ставит cookie сессии Then у неё `HttpOnly`,
+- [x] Given `AUTH_URL` с `https` When Auth.js ставит cookie сессии Then у неё `HttpOnly`,
   `Secure`, `SameSite=Lax`.
 - [x] Given пустая база When `npm run db:migrate` Then есть `users` и `accounts`;
   повторный прогон журнал не меняет.
@@ -548,9 +594,9 @@ apps/api/src/
 - [x] Given второй `createUser` с той же почтой или второй `linkAccount` с тем же
   аккаунтом Then ошибка базы, строк не прибавилось.
 - [x] Given импорт `@auth/drizzle-adapter` вне `src/db/` Then lint красный.
-- [ ] Given импорт `@hono/auth-js` вне HTTP-края Then lint красный.
+- [x] Given импорт `@hono/auth-js` вне HTTP-края Then lint красный.
 - [x] Given собранная функция Then следов миграций в ней по-прежнему нет.
-- [ ] Идемпотентность: Given два `GET /api/me` подряд Then ответы одинаковы, база не
+- [x] Идемпотентность: Given два `GET /api/me` подряд Then ответы одинаковы, база не
   менялась.
 - [ ] Given вход через Google в браузере на `http://127.0.0.1:5173` When `/api/me` Then
   `200` и данные вошедшего (проверяет человек).
@@ -564,9 +610,9 @@ apps/api/src/
 - [x] Фаза 1: таблицы `users` и `accounts`, миграция, адаптер в `src/db/neon/`, запрет
   импорта `@auth/drizzle-adapter`, тесты адаптера на стенде, документы сущностей — PR в
   `feature/52-google-auth`.
-- [ ] Фаза 2: окружение, Auth.js под `/api/auth/*`, `requireSession` и `OPEN_ROUTES`,
-  `GET /api/me`, запрет импорта `@hono/auth-js`, тесты, прогон `curl` и вход в браузере
-  — PR в `feature/52-google-auth`.
+- [x] Фаза 2: окружение, Auth.js под `/api/auth/*`, `requireSession` и `OPEN_ROUTES`,
+  `GET /api/me`, запрет импорта `@hono/auth-js`, тесты, прогон `curl` — PR в
+  `feature/52-google-auth`. Вход через Google в браузере проверяет человек.
 - [ ] Финальный PR `feature/52-google-auth` → `release/backend`.
 
 ## Связи

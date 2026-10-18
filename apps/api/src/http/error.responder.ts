@@ -19,6 +19,15 @@ export const respondNotFound = (context: Context<AppEnv>): Response => {
 };
 
 /**
+ * Запрос без сессии к закрытой ручке (AUTH_REQUIRED_BY_DEFAULT,
+ * docs/specs/52-google-auth.md). Лог пишет `requireSession`: он знает, почему отказал.
+ */
+export const respondUnauthorized = (context: Context<AppEnv>): Response => {
+  const body: ErrorBody = { error: 'unauthorized' };
+  return context.json(body, 401);
+};
+
+/**
  * Необработанное исключение. Лог пишется здесь, потому что здесь ошибка и
  * обработана (CLAUDE.md §9); наружу уходит только код, без стека и сообщения.
  */
