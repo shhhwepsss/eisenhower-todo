@@ -115,5 +115,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // Файлы тестов идут по одному: стенд базы один, и каждый тест на нём начинает со
+    // стирания базы — параллельные файлы стёрли бы её друг у друга.
+    fileParallelism: false,
   },
 });
